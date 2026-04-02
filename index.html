@@ -55,28 +55,35 @@ body {
 .page {
   position: relative; z-index: 1;
   max-width: 520px; margin: 0 auto;
-  padding: 2rem 1.25rem 5rem;
+  /* top: safe area (Dynamic Island/notch) + extra breathing room */
+  padding: calc(env(safe-area-inset-top) + 2rem) 1.25rem calc(env(safe-area-inset-bottom) + 5rem);
 }
 
 /* ── Bottom nav ─────────────────────────── */
 .nav {
   position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
-  background: rgba(13,15,20,0.92);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: rgba(13,15,20,0.95);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
   border-top: 1px solid var(--border);
   display: flex;
+  /* safe area so buttons sit above home indicator */
   padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
 }
 .nav-btn {
   flex: 1; border: none; background: none; color: var(--muted);
-  padding: 0.75rem 0.5rem 0.5rem;
+  padding: 0.7rem 0.5rem 0.4rem;
   font-family: 'DM Sans', sans-serif;
   font-size: 0.7rem;
-  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
   cursor: pointer; transition: color 0.2s;
+  /* prevent text/icon from being cut */
+  min-height: 56px;
 }
-.nav-btn .nav-icon { font-size: 1.3rem; }
+.nav-btn .nav-icon { font-size: 1.25rem; line-height: 1; }
+.nav-btn span:last-child { line-height: 1; }
 .nav-btn.active { color: var(--accent1); }
 
 /* ── Tabs/pages ─────────────────────────── */

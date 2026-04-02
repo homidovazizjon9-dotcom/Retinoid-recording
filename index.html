@@ -360,14 +360,17 @@ body {
 
 /* ── Toast ──────────────────────────────── */
 .toast {
-  position:fixed; bottom:5rem; left:50%;
-  transform:translateX(-50%) translateY(120px);
+  position:fixed;
+  bottom: calc(env(safe-area-inset-bottom) + 5rem);
+  left:50%;
+  transform:translateX(-50%) translateY(calc(100% + 40px));
   background:var(--card2); border:1px solid var(--border2);
   border-radius:18px; padding:0.9rem 1.25rem; text-align:center;
   z-index:999; transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
   max-width:290px; box-shadow:0 20px 60px rgba(0,0,0,0.7); width:calc(100% - 2.5rem);
+  pointer-events:none;
 }
-.toast.show { transform:translateX(-50%) translateY(0); }
+.toast.show { transform:translateX(-50%) translateY(0); pointer-events:auto; }
 .toast-emoji { font-size:1.8rem; display:block; margin-bottom:0.2rem; }
 .toast-msg   { font-size:0.88rem; color:var(--text); font-weight:500; }
 .toast-sub   { font-size:0.76rem; color:var(--muted2); margin-top:0.2rem; }
@@ -586,6 +589,38 @@ body {
   </div>
   <div id="tips-list"></div>
 </div>
+
+<!-- Toast -->
+<div class="toast" id="toast">
+  <span class="toast-emoji" id="toast-emoji">🎉</span>
+  <div class="toast-msg" id="toast-msg"></div>
+  <div class="toast-sub" id="toast-sub"></div>
+</div>
+
+<script>
+// ── DATA ─────────────────────────────────────────────────────────
+const TOTAL = 60;
+const CIRC = 263.9;
+
+const toastMessages = {
+  kutris: [
+    { emoji:'🎉', msg:'Молодец, Азизчон!',      sub:'Кутерис принят. Акне хана — ты сделал это!' },
+    { emoji:'🔥', msg:'Огонь, красавчик!',       sub:'Кожа скажет тебе спасибо через 60 дней.' },
+    { emoji:'🌟', msg:'Звёздный ход!',           sub:'Каждая таблетка — шаг к идеальной коже.' },
+    { emoji:'💥', msg:'Бум! Кутерис принят!',    sub:'Акне в шоке. Продолжай в том же духе!' },
+    { emoji:'🏆', msg:'Чемпион!',               sub:'Ещё один день в копилке побед. Красава!' },
+    { emoji:'🌈', msg:'Кожа говорит спасибо!',  sub:'Ты не сдаёшься — это редкость. Гордись.' },
+    { emoji:'⚡', msg:'Заряжено на победу!',    sub:'День засчитан. Акне паникует.' },
+  ],
+  antibio: [
+    { emoji:'🧬', msg:'Наука работает!',        sub:'Бактерии бегут в страхе. Хорошая работа!' },
+    { emoji:'🛡️', msg:'Защита активна!',        sub:'Организм благодарит тебя за заботу.' },
+    { emoji:'⚡', msg:'Заряжено!',              sub:'Антибиотик уже в крови. Ты герой.' },
+    { emoji:'🌿', msg:'Чисто и честно!',        sub:'Ещё один день без пропуска — красавчик!' },
+    { emoji:'🚀', msg:'В полёт!',               sub:'Антибиотик принят. Ты неостановим.' },
+    { emoji:'💫', msg:'Стабильность — сила!',   sub:'Регулярность — ключ к успеху курса.' },
+  ]
+};
 
 const tips = [
   { cat:'Приём', emoji:'⏰', text:'Принимай обе таблетки в одно и то же время каждый день — так уровень в крови будет стабильным и эффект максимальным.' },

@@ -186,15 +186,19 @@ body {
 
 /* ── Take button ────────────────────────── */
 .btn-take {
-  width:100%; margin-top:1.1rem; padding:0.8rem;
-  border-radius:13px; border:none;
-  font-family:'DM Sans',sans-serif; font-size:0.92rem; font-weight:500;
-  cursor:pointer; transition:all 0.2s; position:relative; overflow:hidden;
+  width:100%; margin-top:1.1rem;
+  padding: 1rem 1.25rem;
+  border-radius: 16px; border: none;
+  font-family:'DM Sans',sans-serif; font-size: 1rem; font-weight: 600;
+  cursor:pointer; transition: transform 0.15s, opacity 0.2s;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  letter-spacing: 0.01em;
 }
-.btn-take:active { transform:scale(0.98); }
-.btn-take:disabled { opacity:0.45; cursor:default; }
-.kutris .btn-take { background:linear-gradient(135deg,#7c6aff,#a855f7); color:#fff; }
-.antibio .btn-take { background:linear-gradient(135deg,#4adeab,#22d3ee); color:#0d2a22; }
+.btn-take:active { transform: scale(0.97); }
+.btn-take:disabled { cursor: default; }
+.kutris .btn-take  { background: linear-gradient(135deg,#7c6aff,#a855f7); color:#fff; box-shadow: 0 4px 24px rgba(124,106,255,0.35); }
+.antibio .btn-take { background: linear-gradient(135deg,#4adeab,#22d3ee); color:#0a2019; box-shadow: 0 4px 24px rgba(74,222,171,0.3); }
+.btn-take:disabled { box-shadow: none; }
 
 /* ── Streak ─────────────────────────────── */
 .streak-card {
@@ -358,33 +362,6 @@ body {
   text-transform:uppercase; letter-spacing:0.1em; margin:1.25rem 0 0.6rem;
 }
 
-/* ── Toast ──────────────────────────────── */
-.toast {
-  position:fixed;
-  bottom: calc(env(safe-area-inset-bottom) + 5rem);
-  left:50%;
-  transform:translateX(-50%) translateY(calc(100% + 40px));
-  background:var(--card2); border:1px solid var(--border2);
-  border-radius:18px; padding:0.9rem 1.25rem; text-align:center;
-  z-index:999; transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
-  max-width:290px; box-shadow:0 20px 60px rgba(0,0,0,0.7); width:calc(100% - 2.5rem);
-  pointer-events:none;
-}
-.toast.show { transform:translateX(-50%) translateY(0); pointer-events:auto; }
-.toast-emoji { font-size:1.8rem; display:block; margin-bottom:0.2rem; }
-.toast-msg   { font-size:0.88rem; color:var(--text); font-weight:500; }
-.toast-sub   { font-size:0.76rem; color:var(--muted2); margin-top:0.2rem; }
-
-/* Confetti */
-.confetti-piece {
-  position:fixed; pointer-events:none; z-index:998;
-  animation:confettiFall var(--dur,1.5s) ease-in forwards;
-}
-@keyframes confettiFall {
-  0%   { transform:translateY(var(--sy)) rotate(0deg); opacity:1; }
-  100% { transform:translateY(calc(var(--sy) + 700px)) rotate(var(--rot)); opacity:0; }
-}
-
 /* ── Install banner ─────────────────────── */
 .install-banner {
   background:linear-gradient(135deg,rgba(124,106,255,0.15),rgba(255,107,157,0.1));
@@ -460,7 +437,7 @@ body {
         </svg>
         <div class="ring-label">
           <span class="ring-count" id="count-kutris">0</span>
-          <span class="ring-total">из 60</span>
+          <span class="ring-total" id="total-kutris">из 60</span>
         </div>
       </div>
       <div class="ring-info">
@@ -478,7 +455,7 @@ body {
         <div class="pill-icon">🧬</div>
         <div>
           <div class="pill-name">Антибиотик</div>
-          <div class="pill-sub">2 таблетки · каждый день</div>
+          <div class="pill-sub">2 таблетки · 20 дней</div>
         </div>
       </div>
       <div class="taken-badge" id="badge-antibio">✓ Принято</div>
@@ -492,7 +469,7 @@ body {
         </svg>
         <div class="ring-label">
           <span class="ring-count" id="count-antibio">0</span>
-          <span class="ring-total">из 60</span>
+          <span class="ring-total" id="total-antibio">из 20</span>
         </div>
       </div>
       <div class="ring-info">
@@ -590,30 +567,14 @@ body {
   <div id="tips-list"></div>
 </div>
 
-<script>
-// ── DATA ─────────────────────────────────────────────────────────
-const TOTAL = 60;
-const CIRC = 263.9;
 
-const toastMessages = {
-  kutris: [
-    { emoji:'🎉', msg:'Молодец, Азизчон!',      sub:'Кутерис принят. Акне хана — ты сделал это!' },
-    { emoji:'🔥', msg:'Огонь, красавчик!',       sub:'Кожа скажет тебе спасибо через 60 дней.' },
-    { emoji:'🌟', msg:'Звёздный ход!',           sub:'Каждая таблетка — шаг к идеальной коже.' },
-    { emoji:'💥', msg:'Бум! Кутерис принят!',    sub:'Акне в шоке. Продолжай в том же духе!' },
-    { emoji:'🏆', msg:'Чемпион!',               sub:'Ещё один день в копилке побед. Красава!' },
-    { emoji:'🌈', msg:'Кожа говорит спасибо!',  sub:'Ты не сдаёшься — это редкость. Гордись.' },
-    { emoji:'⚡', msg:'Заряжено на победу!',    sub:'День засчитан. Акне паникует.' },
-  ],
-  antibio: [
-    { emoji:'🧬', msg:'Наука работает!',        sub:'Бактерии бегут в страхе. Хорошая работа!' },
-    { emoji:'🛡️', msg:'Защита активна!',        sub:'Организм благодарит тебя за заботу.' },
-    { emoji:'⚡', msg:'Заряжено!',              sub:'Антибиотик уже в крови. Ты герой.' },
-    { emoji:'🌿', msg:'Чисто и честно!',        sub:'Ещё один день без пропуска — красавчик!' },
-    { emoji:'🚀', msg:'В полёт!',               sub:'Антибиотик принят. Ты неостановим.' },
-    { emoji:'💫', msg:'Стабильность — сила!',   sub:'Регулярность — ключ к успеху курса.' },
-  ]
+<script>
+// ── CONFIG ────────────────────────────────────────────────────────
+const PILLS = {
+  kutris:  { total: 60, label: 'Кутерис',    icon: '💊', perDay: 2, color: 'var(--accent1)' },
+  antibio: { total: 20, label: 'Антибиотик', icon: '🧬', perDay: 2, color: 'var(--accent3)' },
 };
+const CIRC = 263.9;
 
 const tips = [
   { cat:'Приём', emoji:'⏰', text:'Принимай обе таблетки в одно и то же время каждый день — так уровень в крови будет стабильным и эффект максимальным.' },
@@ -654,15 +615,19 @@ let deferredPrompt = null;
 let state = loadState();
 
 function loadState() {
-  const saved = localStorage.getItem('aziz-pills-v2');
+  const saved = localStorage.getItem('aziz-pills-v3');
   if (saved) return JSON.parse(saved);
-  const now = new Date();
   return {
-    startDate: (() => { const d=new Date(now); d.setDate(d.getDate()-5); return d.toISOString().split('T')[0]; })(),
     kutris:  { taken: buildDefaultTaken(6) },
-    antibio: { taken: buildDefaultTaken(6) },
+    antibio: { taken: buildDefaultTaken(5) },
     streak: 6,
   };
+}
+function localDateStr(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 }
 function buildDefaultTaken(days) {
   const obj = {};
@@ -670,13 +635,19 @@ function buildDefaultTaken(days) {
   for (let i = 0; i < days; i++) {
     const d = new Date(now);
     d.setDate(d.getDate() - (days - 1 - i));
-    obj[d.toISOString().split('T')[0]] = true;
+    obj[localDateStr(d)] = true;
   }
   return obj;
 }
-function saveState() { localStorage.setItem('aziz-pills-v2', JSON.stringify(state)); }
+function saveState() { localStorage.setItem('aziz-pills-v3', JSON.stringify(state)); }
 function getTaken(pill) { return Object.keys(state[pill].taken).length; }
-function todayStr() { return new Date().toISOString().split('T')[0]; }
+function todayStr() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
 
 // ── NAV ───────────────────────────────────────────────────────────
 function showTab(tab) {
@@ -706,12 +677,14 @@ function render() {
   document.getElementById('greeting-sub').textContent = subs;
 
   ['kutris','antibio'].forEach(pill => {
+    const cfg   = PILLS[pill];
     const taken = getTaken(pill);
-    const pct = Math.round(taken / TOTAL * 100);
-    const offset = CIRC - (CIRC * taken / TOTAL);
+    const pct   = Math.round(taken / cfg.total * 100);
+    const offset = CIRC - (CIRC * taken / cfg.total);
 
     document.getElementById(`ring-${pill}`).style.strokeDashoffset = offset;
     document.getElementById(`count-${pill}`).textContent = taken;
+    document.getElementById(`total-${pill}`).textContent = `из ${cfg.total}`;
     document.getElementById(`pct-${pill}`).textContent = pct + '%';
 
     const descs = {
@@ -723,12 +696,18 @@ function render() {
 
     const isTakenToday = !!state[pill].taken[today];
     const badge = document.getElementById(`badge-${pill}`);
-    const btn = document.getElementById(`btn-${pill}`);
+    const btn   = document.getElementById(`btn-${pill}`);
     badge.classList.toggle('visible', isTakenToday);
     btn.disabled = isTakenToday;
-    btn.textContent = isTakenToday
-      ? '✓ Уже принято сегодня!'
-      : (pill==='kutris' ? 'Отметить приём сегодня 💊' : 'Отметить приём сегодня 🧬');
+    if (isTakenToday) {
+      btn.innerHTML = `<span style="font-size:1.1rem">✓</span> Принято сегодня!`;
+      btn.style.opacity = '0.55';
+    } else {
+      btn.innerHTML = pill==='kutris'
+        ? `<span style="font-size:1.1rem">💊</span> Принял ${cfg.perDay} таблетки Кутериса`
+        : `<span style="font-size:1.1rem">🧬</span> Принял ${cfg.perDay} таблетки Антибиотика`;
+      btn.style.opacity = '1';
+    }
   });
 
   // Streak
@@ -793,40 +772,10 @@ function takePill(pill) {
   if (bothTaken) state.streak++;
   saveState();
   render();
-  showToast(pill);
-  launchConfetti();
-}
-
-// ── TOAST ─────────────────────────────────────────────────────────
-function showToast(pill) {
-  const msgs = toastMessages[pill];
-  const m = msgs[Math.floor(Math.random() * msgs.length)];
-  document.getElementById('toast-emoji').textContent = m.emoji;
-  document.getElementById('toast-msg').textContent   = m.msg;
-  document.getElementById('toast-sub').textContent   = m.sub;
-  const t = document.getElementById('toast');
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 3800);
-}
-
-function launchConfetti() {
-  const colors = ['#7c6aff','#ff6b9d','#4adeab','#ffa94d','#f9fafb','#fff'];
-  for (let i = 0; i < 35; i++) {
-    const el = document.createElement('div');
-    el.className = 'confetti-piece';
-    const size = 6 + Math.random() * 10;
-    el.style.cssText = `
-      left:${Math.random()*100}vw; top:${Math.random()*-80-10}px;
-      width:${size}px; height:${size}px;
-      background:${colors[Math.floor(Math.random()*colors.length)]};
-      border-radius:${Math.random()>.5?'50%':'3px'};
-    `;
-    el.style.setProperty('--dur', (1+Math.random()*.8)+'s');
-    el.style.setProperty('--sy',  (-Math.random()*150-30)+'px');
-    el.style.setProperty('--rot', (Math.random()*720-360)+'deg');
-    document.body.appendChild(el);
-    setTimeout(() => el.remove(), 2500);
-  }
+  // quick visual pulse on the button
+  const btn = document.getElementById(`btn-${pill}`);
+  btn.style.transform = 'scale(0.97)';
+  setTimeout(() => { btn.style.transform = ''; }, 150);
 }
 
 // ── TIP WIDGET ────────────────────────────────────────────────────
@@ -925,7 +874,7 @@ function renderCalendar() {
 
     for (let day = 1; day <= daysInMonth; day++) {
       const dateObj = new Date(calYear, calMonth, day);
-      const ds = dateObj.toISOString().split('T')[0];
+      const ds = localDateStr(dateObj);
       const isTaken  = !!state[pill].taken[ds];
       const isToday  = ds === today;
       const isFuture = dateObj > now;
@@ -1007,9 +956,9 @@ initCal();
 render();
 // Animate rings after paint
 setTimeout(() => {
-  ['kutris','antibio'].forEach(pill => {
+  Object.keys(PILLS).forEach(pill => {
     const t = getTaken(pill);
-    document.getElementById(`ring-${pill}`).style.strokeDashoffset = CIRC - CIRC*t/TOTAL;
+    document.getElementById(`ring-${pill}`).style.strokeDashoffset = CIRC - CIRC * t / PILLS[pill].total;
   });
 }, 150);
 </script>

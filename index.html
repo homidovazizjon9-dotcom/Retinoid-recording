@@ -11,6 +11,9 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet">
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -415,6 +418,9 @@ body {
   </div>
 
   <div class="date-badge"><span id="date-text"></span></div>
+  <div style="text-align:center;font-size:0.75rem;min-height:1.2rem;margin-top:-0.75rem;margin-bottom:0.75rem;">
+    <span id="sync-status"></span>
+  </div>
 
   <!-- Kutris -->
   <div class="pill-card kutris">
@@ -608,45 +614,134 @@ const tipCategories = {
   'Важно знать': ['Приём', 'Ожидания', 'Мотивация', 'Анализы'],
 };
 
+// ── FIREBASE ──────────────────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyAYxZOmHLiUpONeRVIpwt8QbmemJuPisS8",
+  authDomain: "acne-ac61d.firebaseapp.com",
+  databaseURL: "https://acne-ac61d-default-rtdb.firebaseio.com",
+  projectId: "acne-ac61d",
+  storageBucket: "acne-ac61d.firebasestorage.app",
+  messagingSenderId: "73729450722",
+  appId: "1:73729450722:web:ec16e0913ded121cca74bb"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const REF = db.ref('azizjon');
+
 // ── STATE ─────────────────────────────────────────────────────────
 let currentTip = 0;
 let calYear, calMonth;
 let deferredPrompt = null;
-let state = loadState();
+let state = defaultState();
+let fbReady = false;
 
-function loadState() {
-  const saved = localStorage.getItem('aziz-pills-v3');
-  if (saved) return JSON.parse(saved);
-  return {
-    kutris:  { taken: buildDefaultTaken(6) },
-    antibio: { taken: buildDefaultTaken(5) },
-    streak: 6,
-  };
-}
 function localDateStr(d) {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
 }
+function todayStr() {
+  return localDateStr(new Date());
+}
 function buildDefaultTaken(days) {
+  // days already done = ending YESTERDAY
   const obj = {};
   const now = new Date();
   for (let i = 0; i < days; i++) {
     const d = new Date(now);
-    d.setDate(d.getDate() - (days - 1 - i));
+    d.setDate(d.getDate() - days + i);
     obj[localDateStr(d)] = true;
   }
   return obj;
 }
-function saveState() { localStorage.setItem('aziz-pills-v3', JSON.stringify(state)); }
+function defaultState() {
+  return {
+    kutris:  { taken: buildDefaultTaken(6) },
+    antibio: { taken: buildDefaultTaken(5) },
+    streak: 6,
+  };
+}
 function getTaken(pill) { return Object.keys(state[pill].taken).length; }
-function todayStr() {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
+
+// показать индикатор загрузки/синхронизации
+function setStatus(msg, color) {
+  let el = document.getElementById('sync-status');
+  if (!el) return;
+  el.textContent = msg;
+  el.style.color = color || 'var(--muted2)';
+}
+
+// сохранить в Firebase
+function saveState() {
+  // также дублируем в localStorage как кэш
+  localStorage.setItem('aziz-pills-cache', JSON.stringify(state));
+  REF.set(state).catch(err => {
+    console.warn('Firebase save error:', err);
+    setStatus('⚠️ Нет связи — данные сохранены локально', 'var(--accent4)');
+    setTimeout(() => setStatus(''), 3000);
+  });
+}
+
+// подписаться на изменения из Firebase (realtime sync)
+function initFirebase() {
+  setStatus('🔄 Загрузка...', 'var(--muted2)');
+
+  REF.once('value').then(snap => {
+    const data = snap.val();
+    if (data && data.kutris && data.antibio) {
+      state = data;
+      // убедимся что taken — объект, а не null
+      if (!state.kutris.taken)  state.kutris.taken  = {};
+      if (!state.antibio.taken) state.antibio.taken = {};
+    } else {
+      // первый запуск — запишем дефолт в Firebase
+      state = defaultState();
+      REF.set(state);
+    }
+    localStorage.setItem('aziz-pills-cache', JSON.stringify(state));
+    fbReady = true;
+    setStatus('');
+    render();
+    animateRingsDelayed();
+
+    // слушаем изменения в реальном времени (если открыто на двух устройствах)
+    REF.on('value', snap2 => {
+      if (!fbReady) return;
+      const d2 = snap2.val();
+      if (d2 && d2.kutris && d2.antibio) {
+        state = d2;
+        if (!state.kutris.taken)  state.kutris.taken  = {};
+        if (!state.antibio.taken) state.antibio.taken = {};
+        render();
+        if (document.getElementById('nav-calendar').classList.contains('active')) renderCalendar();
+      }
+    });
+
+  }).catch(err => {
+    console.warn('Firebase load error:', err);
+    // офлайн — грузим из localStorage кэша
+    const cached = localStorage.getItem('aziz-pills-cache');
+    if (cached) {
+      try { state = JSON.parse(cached); } catch(e) { state = defaultState(); }
+    } else {
+      state = defaultState();
+    }
+    fbReady = true;
+    setStatus('📵 Офлайн — данные из кэша', 'var(--accent4)');
+    setTimeout(() => setStatus(''), 4000);
+    render();
+    animateRingsDelayed();
+  });
+}
+
+function animateRingsDelayed() {
+  setTimeout(() => {
+    Object.keys(PILLS).forEach(pill => {
+      const t = getTaken(pill);
+      document.getElementById(`ring-${pill}`).style.strokeDashoffset = CIRC - CIRC * t / PILLS[pill].total;
+    });
+  }, 150);
 }
 
 // ── NAV ───────────────────────────────────────────────────────────
@@ -953,14 +1048,7 @@ if ('serviceWorker' in navigator) {
 // ── INIT ──────────────────────────────────────────────────────────
 createStars();
 initCal();
-render();
-// Animate rings after paint
-setTimeout(() => {
-  Object.keys(PILLS).forEach(pill => {
-    const t = getTaken(pill);
-    document.getElementById(`ring-${pill}`).style.strokeDashoffset = CIRC - CIRC * t / PILLS[pill].total;
-  });
-}, 150);
+initFirebase(); // загружает из Firebase, потом вызывает render()
 </script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-const CACHE = 'aziz-pills-v1';
+const CACHE = 'aziz-pills-v2';
 const ASSETS = ['./index.html', './manifest.json'];
 
 self.addEventListener('install', e => {
@@ -14,6 +14,11 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
+  const url = e.request.url;
+  // не кешируем Firebase и внешние API
+  if (url.includes('firebaseio.com') || url.includes('googleapis.com') || url.includes('gstatic.com')) {
+    return;
+  }
   e.respondWith(
     caches.match(e.request).then(cached => cached || fetch(e.request).catch(() => caches.match('./index.html')))
   );

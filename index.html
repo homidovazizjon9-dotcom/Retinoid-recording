@@ -11,1141 +11,794 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet">
-<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-:root {
-  --bg: #0d0f14;
-  --card: #161a22;
-  --card2: #1e2330;
-  --border: rgba(255,255,255,0.07);
-  --border2: rgba(255,255,255,0.12);
-  --text: #f0f2f8;
-  --muted: #6b7490;
-  --muted2: #9aa0b8;
-  --accent1: #7c6aff;
-  --accent2: #ff6b9d;
-  --accent3: #4adeab;
-  --accent4: #ffa94d;
-  --accent1-dim: rgba(124,106,255,0.12);
-  --accent3-dim: rgba(74,222,171,0.12);
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d0f14;--card:#161a22;--card2:#1e2330;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+  --text:#f0f2f8;--muted:#6b7490;--muted2:#9aa0b8;
+  --a1:#7c6aff;--a2:#ff6b9d;--a3:#4adeab;--a4:#ffa94d;
 }
-
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: 'DM Sans', sans-serif;
-  min-height: 100vh;
-  overflow-x: hidden;
-  -webkit-font-smoothing: antialiased;
-}
-
-/* ── Stars ─────────────────────────────── */
-.stars { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
-.star {
-  position: absolute; border-radius: 50%; background: white;
-  animation: twinkle var(--d,3s) ease-in-out infinite alternate;
-}
-@keyframes twinkle {
-  from { opacity: 0.08; transform: scale(1); }
-  to   { opacity: 0.6;  transform: scale(1.4); }
-}
-
-/* ── Layout ─────────────────────────────── */
-.page {
-  position: relative; z-index: 1;
-  max-width: 520px; margin: 0 auto;
-  /* top: safe area (Dynamic Island/notch) + extra breathing room */
-  padding: calc(env(safe-area-inset-top) + 2rem) 1.25rem calc(env(safe-area-inset-bottom) + 5rem);
-}
-
-/* ── Bottom nav ─────────────────────────── */
-.nav {
-  position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
-  background: rgba(13,15,20,0.95);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border-top: 1px solid var(--border);
-  display: flex;
-  /* safe area so buttons sit above home indicator */
-  padding-bottom: env(safe-area-inset-bottom);
-  padding-left: env(safe-area-inset-left);
-  padding-right: env(safe-area-inset-right);
-}
-.nav-btn {
-  flex: 1; border: none; background: none; color: var(--muted);
-  padding: 0.7rem 0.5rem 0.4rem;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 0.7rem;
-  display: flex; flex-direction: column; align-items: center; gap: 3px;
-  cursor: pointer; transition: color 0.2s;
-  /* prevent text/icon from being cut */
-  min-height: 56px;
-}
-.nav-btn .nav-icon { font-size: 1.25rem; line-height: 1; }
-.nav-btn span:last-child { line-height: 1; }
-.nav-btn.active { color: var(--accent1); }
-
-/* ── Tabs/pages ─────────────────────────── */
-.tab-page { display: none; }
-.tab-page.active { display: block; }
-
-/* ── Greeting ───────────────────────────── */
-.greeting { text-align: center; margin-bottom: 1.75rem; animation: slideDown 0.6s ease; }
-@keyframes slideDown {
-  from { opacity:0; transform:translateY(-20px); }
-  to   { opacity:1; transform:translateY(0); }
-}
-.emoji-wave {
-  font-size: 2.2rem; display: block; margin-bottom: 0.4rem;
-  animation: wave 2s ease-in-out infinite; transform-origin: 70% 70%;
-}
-@keyframes wave {
-  0%,100%{transform:rotate(0)} 20%{transform:rotate(-15deg)} 40%{transform:rotate(14deg)}
-  60%{transform:rotate(-10deg)} 80%{transform:rotate(10deg)}
-}
-.greeting h1 {
-  font-family: 'Syne', sans-serif; font-size: 1.9rem; font-weight: 800;
-  background: linear-gradient(135deg, var(--accent1), var(--accent2));
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-}
-.greeting p { color: var(--muted2); font-size: 0.85rem; margin-top: 0.25rem; }
-
-/* ── Date badge ─────────────────────────── */
-.date-badge { text-align: center; margin-bottom: 1.5rem; }
-.date-badge span {
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: 100px; padding: 0.35rem 1.1rem;
-  font-size: 0.82rem; color: var(--muted2);
-}
-
-/* ── Section title ──────────────────────── */
-.section-title {
-  font-family: 'Syne', sans-serif; font-size: 0.72rem; color: var(--muted);
-  text-transform: uppercase; letter-spacing: 0.1em;
-  margin: 1.75rem 0 0.75rem;
-}
-
-/* ── Pill cards ─────────────────────────── */
-.pill-card {
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: 24px; padding: 1.4rem;
-  margin-bottom: 1rem; animation: fadeUp 0.5s ease both;
-  position: relative; overflow: hidden;
-}
-.pill-card::before {
-  content: ''; position: absolute; top: -50px; right: -50px;
-  width: 140px; height: 140px; border-radius: 50%; opacity: 0.06; pointer-events: none;
-}
-.pill-card.kutris::before { background: var(--accent1); }
-.pill-card.antibio::before { background: var(--accent3); }
-@keyframes fadeUp {
-  from { opacity:0; transform:translateY(16px); }
-  to   { opacity:1; transform:translateY(0); }
-}
-.pill-card:nth-child(2) { animation-delay: 0.1s; }
-.pill-card:nth-child(3) { animation-delay: 0.2s; }
-
-.card-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:1.1rem; }
-.card-left   { display:flex; align-items:center; gap:11px; }
-.pill-icon {
-  width:42px; height:42px; border-radius:13px;
-  display:flex; align-items:center; justify-content:center;
-  font-size:1.25rem; flex-shrink:0;
-}
-.kutris .pill-icon { background:rgba(124,106,255,0.14); }
-.antibio .pill-icon { background:rgba(74,222,171,0.14); }
-.pill-name { font-family:'Syne',sans-serif; font-size:1rem; font-weight:600; }
-.pill-sub  { font-size:0.76rem; color:var(--muted); margin-top:1px; }
-.taken-badge {
-  font-size:0.72rem; padding:0.28rem 0.7rem; border-radius:100px; font-weight:500;
-  background:rgba(74,222,171,0.1); color:var(--accent3);
-  border:1px solid rgba(74,222,171,0.2); display:none;
-}
-.taken-badge.visible { display:block; }
-
-/* ── Ring ───────────────────────────────── */
-.ring-area { display:flex; align-items:center; gap:1.25rem; }
-.ring-wrap  { position:relative; width:100px; height:100px; flex-shrink:0; }
-.ring-svg   { transform:rotate(-90deg); }
-.ring-bg    { fill:none; stroke:var(--card2); stroke-width:7; }
-.ring-fill  { fill:none; stroke-width:7; stroke-linecap:round; transition:stroke-dashoffset 1.2s cubic-bezier(0.4,0,0.2,1); }
-.kutris .ring-fill { stroke:var(--accent1); }
-.antibio .ring-fill { stroke:var(--accent3); }
-.ring-label {
-  position:absolute; inset:0; display:flex; flex-direction:column;
-  align-items:center; justify-content:center; text-align:center;
-}
-.ring-count { font-family:'Syne',sans-serif; font-size:1.3rem; font-weight:800; line-height:1; }
-.kutris .ring-count { color:var(--accent1); }
-.antibio .ring-count { color:var(--accent3); }
-.ring-total { font-size:0.65rem; color:var(--muted); }
-.ring-info { flex:1; }
-.ring-percent { font-family:'Syne',sans-serif; font-size:1.5rem; font-weight:800; }
-.ring-desc { font-size:0.8rem; color:var(--muted2); margin-top:0.2rem; line-height:1.5; }
-
-/* ── Take button ────────────────────────── */
-.btn-take {
-  width:100%; margin-top:1.1rem;
-  padding: 1rem 1.25rem;
-  border-radius: 16px; border: none;
-  font-family:'DM Sans',sans-serif; font-size: 1rem; font-weight: 600;
-  cursor:pointer; transition: transform 0.15s, opacity 0.2s;
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-  letter-spacing: 0.01em;
-}
-.btn-take:active { transform: scale(0.97); }
-.btn-take:disabled { cursor: default; }
-.kutris .btn-take  { background: linear-gradient(135deg,#7c6aff,#a855f7); color:#fff; box-shadow: 0 4px 24px rgba(124,106,255,0.35); }
-.antibio .btn-take { background: linear-gradient(135deg,#4adeab,#22d3ee); color:#0a2019; box-shadow: 0 4px 24px rgba(74,222,171,0.3); }
-.btn-take:disabled { box-shadow: none; }
-
-/* ── Streak ─────────────────────────────── */
-.streak-card {
-  background:var(--card); border:1px solid var(--border); border-radius:24px;
-  padding:1.25rem 1.4rem; animation:fadeUp 0.5s 0.3s ease both;
-  display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;
-}
-.streak-num  { font-family:'Syne',sans-serif; font-size:2.2rem; font-weight:800; color:var(--accent4); line-height:1; }
-.streak-lbl  { font-size:0.78rem; color:var(--muted2); margin-top:0.15rem; }
-.streak-flame { font-size:2.6rem; }
-
-/* ── Motivation ─────────────────────────── */
-.moti-card {
-  background:var(--card); border:1px solid var(--border); border-radius:24px;
-  padding:1.2rem 1.4rem; margin-bottom:1rem;
-  animation:fadeUp 0.5s 0.35s ease both;
-  display:flex; gap:0.9rem; align-items:flex-start;
-}
-.moti-emoji { font-size:1.7rem; flex-shrink:0; }
-.moti-title { font-family:'Syne',sans-serif; font-size:0.92rem; font-weight:600; margin-bottom:0.2rem; }
-.moti-text  { font-size:0.84rem; color:var(--muted2); line-height:1.6; }
-
-/* ── Tips ───────────────────────────────── */
-.tip-card {
-  background:var(--card); border:1px solid var(--border); border-radius:24px;
-  padding:1.2rem 1.4rem; animation:fadeUp 0.5s 0.4s ease both; margin-bottom:1rem;
-  cursor:pointer;
-}
-.tip-header  { display:flex; align-items:center; justify-content:space-between; margin-bottom:0.6rem; }
-.tip-label   { font-size:0.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.09em; }
-.tip-cat     { font-size:0.7rem; color:var(--muted); background:var(--card2); border-radius:100px; padding:0.2rem 0.6rem; }
-.tip-body    { font-size:0.86rem; color:var(--text); line-height:1.65; transition:opacity 0.3s; }
-.tip-footer  { display:flex; align-items:center; justify-content:space-between; margin-top:0.9rem; }
-.tip-dots    { display:flex; gap:5px; }
-.tip-dot     { width:5px; height:5px; border-radius:50%; background:var(--border2); cursor:pointer; transition:all 0.2s; }
-.tip-dot.active { background:var(--accent2); width:16px; border-radius:3px; }
-.tip-nav     { display:flex; gap:6px; }
-.tip-nav button {
-  width:28px; height:28px; border-radius:50%; border:1px solid var(--border2);
-  background:none; color:var(--muted2); font-size:0.85rem; cursor:pointer;
-  display:flex; align-items:center; justify-content:center; transition:all 0.2s;
-}
-.tip-nav button:hover { background:var(--card2); color:var(--text); }
-
-/* ── CALENDAR PAGE ──────────────────────── */
-.cal-header {
-  display:flex; align-items:center; justify-content:space-between;
-  margin-bottom:1.25rem;
-}
-.cal-title { font-family:'Syne',sans-serif; font-size:1.05rem; font-weight:700; }
-.cal-nav   { display:flex; gap:6px; }
-.cal-nav button {
-  width:34px; height:34px; border-radius:10px; border:1px solid var(--border2);
-  background:var(--card); color:var(--muted2); font-size:0.9rem;
-  cursor:pointer; display:flex; align-items:center; justify-content:center;
-  transition:all 0.2s;
-}
-.cal-nav button:hover { background:var(--card2); color:var(--text); }
-
-/* Legend */
-.cal-legend { display:flex; gap:1rem; margin-bottom:1.1rem; flex-wrap:wrap; }
-.legend-item { display:flex; align-items:center; gap:6px; font-size:0.75rem; color:var(--muted2); }
-.legend-dot  { width:12px; height:12px; border-radius:4px; }
-
-.cal-section { margin-bottom:1.25rem; }
-.cal-section-title {
-  font-size:0.75rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em;
-  margin-bottom:0.6rem;
-}
-.cal-section-title span {
-  font-size:0.7rem; margin-left:6px; padding:0.15rem 0.5rem;
-  border-radius:100px; font-size:0.68rem; letter-spacing:0;
-  text-transform:none;
-}
-.cal-section-title.kutris-title span { background:rgba(124,106,255,0.15); color:var(--accent1); }
-.cal-section-title.antibio-title span { background:rgba(74,222,171,0.15); color:var(--accent3); }
-
-/* Weekday headers */
-.cal-weekdays {
-  display:grid; grid-template-columns:repeat(7,1fr);
-  margin-bottom:4px;
-}
-.cal-wday {
-  text-align:center; font-size:0.65rem; color:var(--muted);
-  padding: 0.25rem 0; text-transform:uppercase; letter-spacing:0.05em;
-}
-
-/* Calendar grid */
-.cal-grid {
-  display:grid; grid-template-columns:repeat(7,1fr); gap:3px;
-}
-.cal-day {
-  aspect-ratio:1; border-radius:10px;
-  display:flex; flex-direction:column; align-items:center; justify-content:center;
-  position:relative; font-size:0.78rem; font-weight:500;
-  border:1px solid transparent; cursor:default;
-  transition:all 0.15s;
-}
-.cal-day-num { line-height:1; }
-.cal-day.empty { }
-.cal-day.future { color:var(--muted); opacity:0.35; }
-.cal-day.past-empty { color:var(--muted); background:rgba(255,255,255,0.02); border-color:var(--border); }
-.cal-day.past-empty::after {
-  content:''; position:absolute;
-  width:60%; height:1px; background:rgba(255,255,255,0.12);
-  transform:rotate(-35deg);
-}
-
-/* Today highlight */
-.cal-day.is-today {
-  border-color: var(--accent2) !important;
-  color: var(--text) !important;
-}
-.cal-day.is-today .cal-day-num::after {
-  content:''; display:block; width:4px; height:4px;
-  border-radius:50%; background:var(--accent2);
-  margin:2px auto 0;
-}
-
-/* Taken states */
-.cal-day.taken-both {
-  background: linear-gradient(135deg, rgba(124,106,255,0.22), rgba(74,222,171,0.18));
-  border-color: rgba(124,106,255,0.35);
-  color: var(--text);
-}
-.cal-day.taken-k {
-  background: rgba(124,106,255,0.18);
-  border-color: rgba(124,106,255,0.3);
-  color: var(--text);
-}
-.cal-day.taken-a {
-  background: rgba(74,222,171,0.15);
-  border-color: rgba(74,222,171,0.28);
-  color: var(--text);
-}
-
-/* Checkmark cross */
-.cal-check {
-  position:absolute; inset:0;
-  display:flex; align-items:center; justify-content:center;
-  pointer-events:none;
-}
-.cal-check svg { width:65%; height:65%; opacity:0.55; }
-.cal-day-num { position:relative; z-index:1; font-size:0.75rem; }
-
-/* ── TIPS PAGE ──────────────────────────── */
-.tips-page-card {
-  background:var(--card); border:1px solid var(--border); border-radius:20px;
-  padding:1.1rem 1.25rem; margin-bottom:0.6rem;
-  animation: fadeUp 0.3s ease both;
-  display:flex; gap:0.9rem; align-items:flex-start;
-}
-.tips-page-card:nth-child(even) { animation-delay:0.05s; }
-.tip-emoji { font-size:1.4rem; flex-shrink:0; margin-top:1px; }
-.tip-content {}
-.tip-content-cat { font-size:0.68rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); margin-bottom:3px; }
-.tip-content-text { font-size:0.86rem; color:var(--text); line-height:1.6; }
-
-.tips-cat-title {
-  font-family:'Syne',sans-serif; font-size:0.72rem; color:var(--muted);
-  text-transform:uppercase; letter-spacing:0.1em; margin:1.25rem 0 0.6rem;
-}
-
-/* ── Install banner ─────────────────────── */
-.install-banner {
-  background:linear-gradient(135deg,rgba(124,106,255,0.15),rgba(255,107,157,0.1));
-  border:1px solid rgba(124,106,255,0.2); border-radius:18px;
-  padding:0.9rem 1.1rem; margin-bottom:1rem;
-  display:flex; align-items:center; gap:0.8rem;
-  animation:fadeUp 0.5s 0.6s ease both;
-}
-.install-banner.hidden { display:none; }
-.install-icon { font-size:1.5rem; }
-.install-text { flex:1; font-size:0.8rem; color:var(--muted2); line-height:1.5; }
-.install-text strong { color:var(--text); font-weight:500; }
-.install-btn {
-  background:var(--accent1); color:#fff; border:none; border-radius:10px;
-  padding:0.5rem 0.9rem; font-size:0.78rem; font-weight:500;
-  cursor:pointer; font-family:'DM Sans',sans-serif; white-space:nowrap;
-}
-.install-close { background:none; border:none; color:var(--muted); cursor:pointer; font-size:1rem; padding:4px; }
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+.stars{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.star{position:absolute;border-radius:50%;background:white;animation:twinkle var(--d,3s) ease-in-out infinite alternate}
+@keyframes twinkle{from{opacity:0.1;transform:scale(1)}to{opacity:0.75;transform:scale(1.5)}}
+.page{position:relative;z-index:1;max-width:520px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 1.75rem) 1.25rem calc(env(safe-area-inset-bottom) + 5.5rem)}
+.nav{position:fixed;bottom:0;left:0;right:0;z-index:100;background:rgba(13,15,20,0.96);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-top:1px solid var(--border);display:flex;padding-bottom:env(safe-area-inset-bottom)}
+.nav-btn{flex:1;border:none;background:none;color:var(--muted);padding:0.65rem 0.2rem 0.4rem;font-family:'DM Sans',sans-serif;font-size:0.6rem;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;transition:color 0.2s;min-height:52px}
+.nav-btn .ni{font-size:1.15rem;line-height:1}
+.nav-btn.active{color:var(--a1)}
+.tab-page{display:none}.tab-page.active{display:block}
+.greeting{text-align:center;margin-bottom:1.5rem;animation:slideDown 0.6s ease}
+@keyframes slideDown{from{opacity:0;transform:translateY(-20px)}to{opacity:1;transform:translateY(0)}}
+.emoji-wave{font-size:2rem;display:block;margin-bottom:0.3rem;animation:wave 2s ease-in-out infinite;transform-origin:70% 70%}
+@keyframes wave{0%,100%{transform:rotate(0)}20%{transform:rotate(-15deg)}40%{transform:rotate(14deg)}60%{transform:rotate(-10deg)}80%{transform:rotate(10deg)}}
+.greeting h1{font-family:'Syne',sans-serif;font-size:1.75rem;font-weight:800;background:linear-gradient(135deg,var(--a1),var(--a2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.greeting p{color:var(--muted2);font-size:0.82rem;margin-top:0.2rem}
+.date-badge{text-align:center;margin-bottom:0.5rem}
+.date-badge span{background:var(--card);border:1px solid var(--border);border-radius:100px;padding:0.3rem 1rem;font-size:0.79rem;color:var(--muted2)}
+.sync-row{text-align:center;font-size:0.72rem;min-height:1.1rem;margin-bottom:0.85rem}
+.stitle{font-family:'Syne',sans-serif;font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin:1.5rem 0 0.65rem}
+.card{background:var(--card);border:1px solid var(--border);border-radius:22px;padding:1.2rem;margin-bottom:0.8rem;animation:fadeUp 0.5s ease both;position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;top:-50px;right:-50px;width:130px;height:130px;border-radius:50%;opacity:0.06;pointer-events:none}
+.card.kutris::before{background:var(--a1)}.card.antibio::before{background:var(--a3)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.card-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:0.95rem}
+.card-left{display:flex;align-items:center;gap:10px}
+.pill-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0}
+.kutris .pill-icon{background:rgba(124,106,255,0.14)}.antibio .pill-icon{background:rgba(74,222,171,0.14)}
+.pill-name{font-family:'Syne',sans-serif;font-size:0.96rem;font-weight:600}
+.pill-sub{font-size:0.73rem;color:var(--muted);margin-top:1px}
+.tbadge{font-size:0.69rem;padding:0.23rem 0.6rem;border-radius:100px;font-weight:500;background:rgba(74,222,171,0.1);color:var(--a3);border:1px solid rgba(74,222,171,0.2);display:none}
+.tbadge.on{display:block}
+.ring-area{display:flex;align-items:center;gap:1.1rem}
+.ring-wrap{position:relative;width:94px;height:94px;flex-shrink:0}
+.ring-svg{transform:rotate(-90deg)}
+.ring-bg{fill:none;stroke:var(--card2);stroke-width:7}
+.ring-fill{fill:none;stroke-width:7;stroke-linecap:round;transition:stroke-dashoffset 1.2s cubic-bezier(0.4,0,0.2,1)}
+.kutris .ring-fill{stroke:var(--a1)}.antibio .ring-fill{stroke:var(--a3)}
+.ring-lbl{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.ring-cnt{font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:800;line-height:1}
+.kutris .ring-cnt{color:var(--a1)}.antibio .ring-cnt{color:var(--a3)}
+.ring-tot{font-size:0.61rem;color:var(--muted)}
+.ring-info{flex:1}
+.ring-pct{font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800}
+.ring-desc{font-size:0.77rem;color:var(--muted2);margin-top:0.18rem;line-height:1.5}
+.btn-take{width:100%;margin-top:0.95rem;padding:0.9rem 1.2rem;border-radius:15px;border:none;font-family:'DM Sans',sans-serif;font-size:0.95rem;font-weight:600;cursor:pointer;transition:transform 0.15s,opacity 0.2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-take:active{transform:scale(0.97)}.btn-take:disabled{cursor:default}
+.kutris .btn-take{background:linear-gradient(135deg,#7c6aff,#a855f7);color:#fff;box-shadow:0 4px 18px rgba(124,106,255,0.35)}
+.antibio .btn-take{background:linear-gradient(135deg,#4adeab,#22d3ee);color:#0a2019;box-shadow:0 4px 18px rgba(74,222,171,0.3)}
+.btn-take:disabled{box-shadow:none}
+.timer-row{display:flex;align-items:center;justify-content:center;gap:7px;margin-top:0.6rem;font-size:0.76rem;color:var(--muted2)}
+.timer-val{font-family:'Syne',sans-serif;font-weight:700;color:var(--a4);font-size:0.82rem}
+.level-card{background:var(--card);border:1px solid var(--border);border-radius:22px;padding:1.1rem 1.2rem;margin-bottom:0.8rem;animation:fadeUp 0.4s 0.05s ease both}
+.level-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:0.7rem}
+.level-badge{font-family:'Syne',sans-serif;font-size:0.95rem;font-weight:700}
+.level-xp{font-size:0.73rem;color:var(--muted2)}
+.level-bar-bg{height:7px;background:var(--card2);border-radius:100px;overflow:hidden}
+.level-bar-fill{height:100%;border-radius:100px;transition:width 1s ease;background:linear-gradient(90deg,var(--a1),var(--a2))}
+.streak-card{background:var(--card);border:1px solid var(--border);border-radius:22px;padding:1rem 1.2rem;margin-bottom:0.8rem;animation:fadeUp 0.4s 0.1s ease both;display:flex;align-items:center;justify-content:space-between}
+.streak-num{font-family:'Syne',sans-serif;font-size:1.9rem;font-weight:800;color:var(--a4);line-height:1}
+.streak-lbl{font-size:0.74rem;color:var(--muted2);margin-top:0.12rem}
+.ach-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:0.8rem}
+.ach-item{background:var(--card);border:1px solid var(--border);border-radius:15px;padding:0.8rem 0.4rem;text-align:center;transition:all 0.3s}
+.ach-item.unlocked{border-color:rgba(124,106,255,0.35);background:rgba(124,106,255,0.08)}
+.ach-item.unlocked.gold{border-color:rgba(255,169,77,0.4);background:rgba(255,169,77,0.08)}
+.ach-emoji{font-size:1.5rem;display:block;margin-bottom:3px;filter:grayscale(1);opacity:0.3;transition:all 0.3s}
+.ach-item.unlocked .ach-emoji{filter:none;opacity:1}
+.ach-name{font-size:0.62rem;color:var(--muted);line-height:1.3}
+.ach-item.unlocked .ach-name{color:var(--muted2)}
+.checklist-card{background:var(--card);border:1px solid var(--border);border-radius:22px;padding:1.2rem;margin-bottom:0.8rem}
+.cl-title{font-family:'Syne',sans-serif;font-size:0.84rem;font-weight:600;margin-bottom:0.85rem}
+.check-item{display:flex;align-items:center;gap:10px;padding:0.48rem 0;border-bottom:1px solid var(--border);cursor:pointer;transition:opacity 0.2s}
+.check-item:last-child{border-bottom:none}
+.check-box{width:22px;height:22px;border-radius:7px;border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.2s;font-size:0.75rem}
+.check-item.done .check-box{background:var(--a3);border-color:var(--a3);color:#0a2019}
+.check-label{font-size:0.83rem;flex:1}
+.check-item.done .check-label{text-decoration:line-through;color:var(--muted)}
+.diary-card{background:var(--card);border:1px solid var(--border);border-radius:22px;padding:1.2rem;margin-bottom:0.8rem}
+.skin-scale{display:flex;gap:5px;margin:0.7rem 0}
+.skin-btn{flex:1;padding:0.48rem 0;border-radius:10px;border:1.5px solid var(--border);background:none;color:var(--muted2);font-size:0.95rem;cursor:pointer;transition:all 0.2s;font-family:'DM Sans',sans-serif;display:flex;flex-direction:column;align-items:center;gap:1px}
+.skin-btn span{font-size:0.58rem}
+.skin-btn.active{border-color:var(--a1);background:rgba(124,106,255,0.15);color:var(--text)}
+.diary-note{width:100%;background:var(--card2);border:1px solid var(--border2);border-radius:12px;padding:0.65rem 0.85rem;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.83rem;resize:none;margin-top:0.5rem;outline:none}
+.diary-note:focus{border-color:var(--a1)}
+.btn-save{width:100%;margin-top:0.65rem;padding:0.68rem;border-radius:12px;border:none;background:rgba(124,106,255,0.15);color:var(--a1);font-family:'DM Sans',sans-serif;font-size:0.86rem;font-weight:500;cursor:pointer;transition:all 0.2s}
+.btn-save:hover{background:rgba(124,106,255,0.25)}
+.effects-grid{display:flex;flex-wrap:wrap;gap:6px;margin-top:0.7rem}
+.ef-chip{padding:0.3rem 0.7rem;border-radius:100px;border:1.5px solid var(--border2);background:none;color:var(--muted2);font-size:0.76rem;cursor:pointer;transition:all 0.2s;font-family:'DM Sans',sans-serif}
+.ef-chip.active{border-color:var(--a2);background:rgba(255,107,157,0.12);color:var(--a2)}
+.chart-wrap{position:relative;height:115px;margin-top:0.7rem}
+.chart-canvas{width:100%;height:100%}
+.chart-labels{display:flex;justify-content:space-between;margin-top:3px}
+.chart-lbl{font-size:0.6rem;color:var(--muted)}
+.photo-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:0.7rem}
+.photo-slot{aspect-ratio:1;border-radius:13px;border:1.5px dashed var(--border2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;cursor:pointer;overflow:hidden;position:relative;background:var(--card2);transition:border-color 0.2s}
+.photo-slot:hover{border-color:var(--a1)}
+.photo-slot img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:12px}
+.photo-slot-lbl{font-size:0.7rem;color:var(--muted);text-align:center;z-index:1}
+.photo-slot-ico{font-size:1.4rem;z-index:1}
+.photo-date{position:absolute;bottom:5px;left:0;right:0;text-align:center;font-size:0.6rem;color:rgba(255,255,255,0.75);background:rgba(0,0,0,0.45);padding:2px 0;z-index:2}
+input[type=file]{display:none}
+.cal-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+.cal-title{font-family:'Syne',sans-serif;font-size:0.98rem;font-weight:700}
+.cal-nav-btn{width:31px;height:31px;border-radius:9px;border:1px solid var(--border2);background:var(--card);color:var(--muted2);font-size:0.82rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s}
+.cal-nav-btn:hover{background:var(--card2);color:var(--text)}
+.cal-legend{display:flex;gap:0.85rem;margin-bottom:0.9rem;flex-wrap:wrap}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:0.7rem;color:var(--muted2)}
+.leg-dot{width:10px;height:10px;border-radius:3px}
+.cal-sec{margin-bottom:1rem}
+.cal-sec-title{font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.45rem;display:flex;align-items:center;gap:6px}
+.cal-sec-title span{font-size:0.67rem;padding:0.13rem 0.48rem;border-radius:100px;letter-spacing:0;text-transform:none}
+.kutris-t span{background:rgba(124,106,255,0.15);color:var(--a1)}.antibio-t span{background:rgba(74,222,171,0.15);color:var(--a3)}
+.cal-wdays{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:2px}
+.cal-wd{text-align:center;font-size:0.6rem;color:var(--muted);padding:0.18rem 0;text-transform:uppercase;letter-spacing:0.04em}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.cday{aspect-ratio:1;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;font-size:0.72rem;font-weight:500;border:1px solid transparent;transition:all 0.15s;cursor:pointer}
+.cday.future{color:var(--muted);opacity:0.28}
+.cday.past-miss{color:var(--muted);background:rgba(255,255,255,0.02);border-color:var(--border)}
+.cday.past-miss::after{content:'';position:absolute;width:55%;height:1px;background:rgba(255,255,255,0.1);transform:rotate(-35deg)}
+.cday.is-today{border-color:var(--a2)!important;color:var(--text)!important}
+.cday.is-today .cday-num::after{content:'';display:block;width:4px;height:4px;border-radius:50%;background:var(--a2);margin:1px auto 0}
+.cday.tk{color:var(--text)}
+.cday.tk-k{background:rgba(124,106,255,0.18);border-color:rgba(124,106,255,0.3)}
+.cday.tk-a{background:rgba(74,222,171,0.15);border-color:rgba(74,222,171,0.28)}
+.cal-x{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
+.cal-x svg{width:58%;height:58%;opacity:0.5}
+.cday-num{position:relative;z-index:1;font-size:0.7rem}
+.cday.has-note::before{content:'';position:absolute;top:3px;right:3px;width:4px;height:4px;border-radius:50%;background:var(--a4);z-index:2}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:500;display:flex;align-items:flex-end;justify-content:center;padding:1rem;animation:fadeIn 0.2s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal-box{background:var(--card);border:1px solid var(--border2);border-radius:22px 22px 18px 18px;padding:1.4rem;width:100%;max-width:480px;animation:slideUp 0.3s ease}
+@keyframes slideUp{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-title{font-family:'Syne',sans-serif;font-size:0.98rem;font-weight:700;margin-bottom:0.25rem}
+.modal-sub{font-size:0.76rem;color:var(--muted2);margin-bottom:0.9rem}
+.modal-ta{width:100%;background:var(--card2);border:1px solid var(--border2);border-radius:12px;padding:0.7rem 0.95rem;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.86rem;resize:none;outline:none;height:88px}
+.modal-ta:focus{border-color:var(--a1)}
+.modal-btns{display:flex;gap:7px;margin-top:0.7rem}
+.modal-btn{flex:1;padding:0.7rem;border-radius:11px;border:none;font-family:'DM Sans',sans-serif;font-size:0.88rem;font-weight:500;cursor:pointer;transition:all 0.2s}
+.modal-btn.pri{background:linear-gradient(135deg,var(--a1),#a855f7);color:#fff}
+.modal-btn.sec{background:var(--card2);color:var(--muted2)}
+.tip-card{background:var(--card);border:1px solid var(--border);border-radius:22px;padding:1.05rem 1.2rem;margin-bottom:0.8rem;cursor:pointer}
+.tip-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:0.48rem}
+.tip-lbl{font-size:0.67rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.09em}
+.tip-cat-badge{font-size:0.67rem;color:var(--muted);background:var(--card2);border-radius:100px;padding:0.17rem 0.52rem}
+.tip-body{font-size:0.83rem;color:var(--text);line-height:1.63;transition:opacity 0.3s}
+.tip-footer{display:flex;align-items:center;justify-content:space-between;margin-top:0.75rem}
+.tip-dots{display:flex;gap:4px}
+.tip-dot{width:5px;height:5px;border-radius:50%;background:var(--border2);cursor:pointer;transition:all 0.2s}
+.tip-dot.active{background:var(--a2);width:13px;border-radius:3px}
+.tip-nav{display:flex;gap:5px}
+.tip-nav button{width:25px;height:25px;border-radius:50%;border:1px solid var(--border2);background:none;color:var(--muted2);font-size:0.8rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s}
+.tip-nav button:hover{background:var(--card2);color:var(--text)}
+.tips-page-card{background:var(--card);border:1px solid var(--border);border-radius:17px;padding:0.95rem 1.05rem;margin-bottom:0.5rem;animation:fadeUp 0.3s ease both;display:flex;gap:0.75rem;align-items:flex-start}
+.tips-cat-hdr{font-family:'Syne',sans-serif;font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin:1.1rem 0 0.5rem}
+.moti-card{background:var(--card);border:1px solid var(--border);border-radius:22px;padding:1.05rem 1.2rem;margin-bottom:0.8rem;animation:fadeUp 0.4s 0.15s ease both;display:flex;gap:0.8rem;align-items:flex-start}
+.moti-emoji{font-size:1.55rem;flex-shrink:0}
+.moti-title{font-family:'Syne',sans-serif;font-size:0.88rem;font-weight:600;margin-bottom:0.18rem}
+.moti-text{font-size:0.81rem;color:var(--muted2);line-height:1.6}
+.install-banner{background:linear-gradient(135deg,rgba(124,106,255,0.15),rgba(255,107,157,0.1));border:1px solid rgba(124,106,255,0.2);border-radius:17px;padding:0.8rem 0.95rem;margin-bottom:0.8rem;display:flex;align-items:center;gap:0.7rem;animation:fadeUp 0.5s 0.5s ease both}
+.install-banner.hidden{display:none}
+.install-text{flex:1;font-size:0.77rem;color:var(--muted2);line-height:1.5}
+.install-text strong{color:var(--text);font-weight:500}
+.install-btn{background:var(--a1);color:#fff;border:none;border-radius:9px;padding:0.42rem 0.82rem;font-size:0.74rem;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap}
+.install-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:0.9rem;padding:3px}
+.completion-overlay{position:fixed;inset:0;background:rgba(13,15,20,0.97);z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:2rem;animation:fadeIn 0.5s ease}
+.completion-overlay.hidden{display:none}
+.comp-emoji{font-size:5rem;margin-bottom:1rem;animation:bounce 1s ease infinite alternate}
+@keyframes bounce{from{transform:scale(1)}to{transform:scale(1.1)}}
+.comp-title{font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;background:linear-gradient(135deg,var(--a1),var(--a2),var(--a3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:0.7rem}
+.comp-text{font-size:0.92rem;color:var(--muted2);line-height:1.7;max-width:300px;margin-bottom:1.75rem}
+.comp-close{background:linear-gradient(135deg,var(--a1),#a855f7);color:#fff;border:none;border-radius:15px;padding:0.95rem 2.25rem;font-family:'DM Sans',sans-serif;font-size:0.95rem;font-weight:600;cursor:pointer}
+.conf{position:fixed;pointer-events:none;z-index:1001;animation:confFall var(--dur,1.5s) ease-in forwards}
+@keyframes confFall{0%{transform:translateY(var(--sy)) rotate(0);opacity:1}100%{transform:translateY(calc(var(--sy) + 700px)) rotate(var(--rot));opacity:0}}
+.hist-card{background:var(--card);border:1px solid var(--border);border-radius:17px;padding:0.95rem;margin-bottom:0.55rem}
 </style>
 </head>
 <body>
 <div class="stars" id="stars"></div>
 
-<!-- Bottom Nav -->
+<div class="completion-overlay hidden" id="completion">
+  <div class="comp-emoji">👑</div>
+  <div class="comp-title">Курс завершён!</div>
+  <div class="comp-text">Азизчон, ты сделал это! 60 дней без пропуска. Кожа обновилась полностью. Ты — легенда. Акне больше не вернётся! 🎉</div>
+  <button class="comp-close" onclick="document.getElementById('completion').classList.add('hidden')">Спасибо! 🙌</button>
+</div>
+
 <nav class="nav">
-  <button class="nav-btn active" onclick="showTab('home')" id="nav-home">
-    <span class="nav-icon">🏠</span><span>Главная</span>
-  </button>
-  <button class="nav-btn" onclick="showTab('calendar')" id="nav-calendar">
-    <span class="nav-icon">📅</span><span>Календарь</span>
-  </button>
-  <button class="nav-btn" onclick="showTab('tips')" id="nav-tips">
-    <span class="nav-icon">💡</span><span>Советы</span>
-  </button>
+  <button class="nav-btn active" onclick="showTab('home')" id="nav-home"><span class="ni">🏠</span><span>Главная</span></button>
+  <button class="nav-btn" onclick="showTab('calendar')" id="nav-calendar"><span class="ni">📅</span><span>Журнал</span></button>
+  <button class="nav-btn" onclick="showTab('diary')" id="nav-diary"><span class="ni">📔</span><span>Дневник</span></button>
+  <button class="nav-btn" onclick="showTab('progress')" id="nav-progress"><span class="ni">📸</span><span>Фото</span></button>
+  <button class="nav-btn" onclick="showTab('tips')" id="nav-tips"><span class="ni">💡</span><span>Советы</span></button>
 </nav>
 
-<!-- ═══════ HOME TAB ═══════ -->
+<!-- HOME -->
 <div class="page tab-page active" id="tab-home">
-
   <div id="install-banner" class="install-banner hidden">
-    <div class="install-icon">📲</div>
-    <div class="install-text"><strong>Установи на телефон!</strong> Работает как приложение — без браузера.</div>
-    <button class="install-btn" id="install-btn" onclick="installPWA()">Установить</button>
+    <div style="font-size:1.3rem">📲</div>
+    <div class="install-text"><strong>Установи на телефон!</strong> Работает без браузера.</div>
+    <button class="install-btn" onclick="installPWA()">Установить</button>
     <button class="install-close" onclick="closeBanner()">✕</button>
   </div>
-
   <div class="greeting">
     <span class="emoji-wave">👋</span>
     <h1>Привет, Азизчон!</h1>
-    <p id="greeting-sub">Держишь ритм — это уже победа</p>
+    <p id="greeting-sub"></p>
   </div>
-
   <div class="date-badge"><span id="date-text"></span></div>
-  <div style="text-align:center;font-size:0.75rem;min-height:1.2rem;margin-top:-0.75rem;margin-bottom:0.75rem;">
-    <span id="sync-status"></span>
-  </div>
+  <div class="sync-row"><span id="sync-status"></span></div>
 
-  <!-- Kutris -->
-  <div class="pill-card kutris">
-    <div class="card-header">
-      <div class="card-left">
-        <div class="pill-icon">💊</div>
-        <div>
-          <div class="pill-name">Кутерис</div>
-          <div class="pill-sub">2 таблетки · каждый день</div>
-        </div>
-      </div>
-      <div class="taken-badge" id="badge-kutris">✓ Принято</div>
+  <div class="card kutris">
+    <div class="card-hdr">
+      <div class="card-left"><div class="pill-icon">💊</div><div><div class="pill-name">Кутерис</div><div class="pill-sub">2 таблетки · каждый день</div></div></div>
+      <div class="tbadge" id="badge-kutris">✓ Принято</div>
     </div>
     <div class="ring-area">
       <div class="ring-wrap">
-        <svg class="ring-svg" width="100" height="100" viewBox="0 0 100 100">
-          <circle class="ring-bg" cx="50" cy="50" r="42"/>
-          <circle class="ring-fill" id="ring-kutris" cx="50" cy="50" r="42"
-            stroke-dasharray="263.9" stroke-dashoffset="263.9"/>
+        <svg class="ring-svg" width="94" height="94" viewBox="0 0 94 94">
+          <circle class="ring-bg" cx="47" cy="47" r="39"/>
+          <circle class="ring-fill" id="ring-kutris" cx="47" cy="47" r="39" stroke-dasharray="245.0" stroke-dashoffset="245.0"/>
         </svg>
-        <div class="ring-label">
-          <span class="ring-count" id="count-kutris">0</span>
-          <span class="ring-total" id="total-kutris">из 60</span>
-        </div>
+        <div class="ring-lbl"><span class="ring-cnt" id="count-kutris">0</span><span class="ring-tot" id="total-kutris">из 60</span></div>
       </div>
-      <div class="ring-info">
-        <div class="ring-percent" id="pct-kutris">0%</div>
-        <div class="ring-desc" id="desc-kutris">Путь начался!</div>
-      </div>
+      <div class="ring-info"><div class="ring-pct" id="pct-kutris">0%</div><div class="ring-desc" id="desc-kutris">Путь начался!</div></div>
     </div>
-    <button class="btn-take" id="btn-kutris" onclick="takePill('kutris')">Отметить приём сегодня 💊</button>
+    <button class="btn-take" id="btn-kutris" onclick="takePill('kutris')">💊 Принял 2 таблетки Кутериса</button>
+    <div class="timer-row" id="timer-kutris"></div>
   </div>
 
-  <!-- Antibiotic -->
-  <div class="pill-card antibio">
-    <div class="card-header">
-      <div class="card-left">
-        <div class="pill-icon">🧬</div>
-        <div>
-          <div class="pill-name">Антибиотик</div>
-          <div class="pill-sub">2 таблетки · 20 дней</div>
-        </div>
-      </div>
-      <div class="taken-badge" id="badge-antibio">✓ Принято</div>
+  <div class="card antibio">
+    <div class="card-hdr">
+      <div class="card-left"><div class="pill-icon">🧬</div><div><div class="pill-name">Антибиотик</div><div class="pill-sub">2 таблетки · 20 дней</div></div></div>
+      <div class="tbadge" id="badge-antibio">✓ Принято</div>
     </div>
     <div class="ring-area">
       <div class="ring-wrap">
-        <svg class="ring-svg" width="100" height="100" viewBox="0 0 100 100">
-          <circle class="ring-bg" cx="50" cy="50" r="42"/>
-          <circle class="ring-fill" id="ring-antibio" cx="50" cy="50" r="42"
-            stroke-dasharray="263.9" stroke-dashoffset="263.9"/>
+        <svg class="ring-svg" width="94" height="94" viewBox="0 0 94 94">
+          <circle class="ring-bg" cx="47" cy="47" r="39"/>
+          <circle class="ring-fill" id="ring-antibio" cx="47" cy="47" r="39" stroke-dasharray="245.0" stroke-dashoffset="245.0"/>
         </svg>
-        <div class="ring-label">
-          <span class="ring-count" id="count-antibio">0</span>
-          <span class="ring-total" id="total-antibio">из 20</span>
-        </div>
+        <div class="ring-lbl"><span class="ring-cnt" id="count-antibio">0</span><span class="ring-tot" id="total-antibio">из 20</span></div>
       </div>
-      <div class="ring-info">
-        <div class="ring-percent" id="pct-antibio">0%</div>
-        <div class="ring-desc" id="desc-antibio">Антибиотик в деле!</div>
-      </div>
+      <div class="ring-info"><div class="ring-pct" id="pct-antibio">0%</div><div class="ring-desc" id="desc-antibio">Антибиотик в деле!</div></div>
     </div>
-    <button class="btn-take" id="btn-antibio" onclick="takePill('antibio')">Отметить приём сегодня 🧬</button>
+    <button class="btn-take" id="btn-antibio" onclick="takePill('antibio')">🧬 Принял 2 таблетки Антибиотика</button>
+    <div class="timer-row" id="timer-antibio"></div>
   </div>
 
-  <p class="section-title">Статистика</p>
+  <div class="level-card">
+    <div class="level-row"><div class="level-badge" id="level-badge">⭐ Новичок</div><div class="level-xp" id="level-xp"></div></div>
+    <div class="level-bar-bg"><div class="level-bar-fill" id="level-bar" style="width:0%"></div></div>
+  </div>
 
   <div class="streak-card">
-    <div>
-      <div class="streak-num" id="streak-num">6</div>
-      <div class="streak-lbl">дней подряд без пропуска</div>
-    </div>
-    <div class="streak-flame">🔥</div>
+    <div><div class="streak-num" id="streak-num">0</div><div class="streak-lbl">дней подряд без пропуска</div></div>
+    <div style="font-size:2.1rem">🔥</div>
   </div>
 
-  <p class="section-title">Мотивация</p>
+  <p class="stitle">Достижения</p>
+  <div class="ach-grid" id="ach-grid"></div>
 
+  <p class="stitle">Мотивация</p>
   <div class="moti-card">
     <div class="moti-emoji" id="moti-emoji">💪</div>
-    <div>
-      <div class="moti-title" id="moti-title">Ты на правильном пути!</div>
-      <div class="moti-text" id="moti-text"></div>
-    </div>
+    <div><div class="moti-title" id="moti-title"></div><div class="moti-text" id="moti-text"></div></div>
   </div>
 
-  <!-- Tip widget on home -->
   <div class="tip-card" onclick="nextTip()">
-    <div class="tip-header">
-      <span class="tip-label">Совет дня</span>
-      <span class="tip-cat" id="tip-cat-badge"></span>
-    </div>
+    <div class="tip-hdr"><span class="tip-lbl">Совет дня</span><span class="tip-cat-badge" id="tip-cat-badge"></span></div>
     <div class="tip-body" id="tip-body"></div>
     <div class="tip-footer">
       <div class="tip-dots" id="tip-dots"></div>
-      <div class="tip-nav">
-        <button onclick="event.stopPropagation();prevTip()">‹</button>
-        <button onclick="event.stopPropagation();nextTip()">›</button>
-      </div>
+      <div class="tip-nav"><button onclick="event.stopPropagation();prevTip()">‹</button><button onclick="event.stopPropagation();nextTip()">›</button></div>
     </div>
   </div>
-
 </div>
 
-<!-- ═══════ CALENDAR TAB ═══════ -->
+<!-- CALENDAR -->
 <div class="page tab-page" id="tab-calendar">
-
-  <div class="cal-header">
+  <div class="cal-hdr">
     <div class="cal-title" id="cal-month-title"></div>
-    <div class="cal-nav">
-      <button onclick="calPrev()">‹</button>
-      <button onclick="calNext()">›</button>
-    </div>
+    <div style="display:flex;gap:5px"><button class="cal-nav-btn" onclick="calPrev()">‹</button><button class="cal-nav-btn" onclick="calNext()">›</button></div>
   </div>
-
   <div class="cal-legend">
-    <div class="legend-item">
-      <div class="legend-dot" style="background:rgba(124,106,255,0.4);border:1px solid rgba(124,106,255,0.6)"></div>
-      <span>Кутерис принят</span>
-    </div>
-    <div class="legend-item">
-      <div class="legend-dot" style="background:rgba(74,222,171,0.35);border:1px solid rgba(74,222,171,0.5)"></div>
-      <span>Антибиотик принят</span>
-    </div>
-    <div class="legend-item">
-      <div class="legend-dot" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1)"></div>
-      <span>Не принято</span>
-    </div>
+    <div class="leg-item"><div class="leg-dot" style="background:rgba(124,106,255,0.4);border:1px solid rgba(124,106,255,0.6)"></div><span>Кутерис</span></div>
+    <div class="leg-item"><div class="leg-dot" style="background:rgba(74,222,171,0.35);border:1px solid rgba(74,222,171,0.5)"></div><span>Антибиотик</span></div>
+    <div class="leg-item"><div class="leg-dot" style="background:rgba(255,169,77,0.35);border:1px solid rgba(255,169,77,0.5)"></div><span>Заметка</span></div>
   </div>
-
-  <div class="cal-section">
-    <div class="cal-section-title kutris-title">💊 Кутерис <span id="cal-k-count"></span></div>
-    <div class="cal-weekdays" id="cal-weekdays-k"></div>
-    <div class="cal-grid" id="cal-grid-k"></div>
+  <div class="cal-sec">
+    <div class="cal-sec-title kutris-t">💊 Кутерис <span id="cal-k-count"></span></div>
+    <div class="cal-wdays" id="cal-wd-k"></div><div class="cal-grid" id="cal-grid-k"></div>
   </div>
-
-  <div class="cal-section">
-    <div class="cal-section-title antibio-title">🧬 Антибиотик <span id="cal-a-count"></span></div>
-    <div class="cal-weekdays" id="cal-weekdays-a"></div>
-    <div class="cal-grid" id="cal-grid-a"></div>
+  <div class="cal-sec">
+    <div class="cal-sec-title antibio-t">🧬 Антибиотик <span id="cal-a-count"></span></div>
+    <div class="cal-wdays" id="cal-wd-a"></div><div class="cal-grid" id="cal-grid-a"></div>
   </div>
-
+  <p class="stitle">График состояния кожи</p>
+  <div class="card" style="padding:1rem">
+    <div class="chart-wrap"><canvas id="skin-chart" class="chart-canvas"></canvas></div>
+    <div class="chart-labels" id="chart-labels"></div>
+  </div>
 </div>
 
-<!-- ═══════ TIPS TAB ═══════ -->
-<div class="page tab-page" id="tab-tips">
-  <div class="greeting">
-    <h1 style="font-size:1.5rem">Советы дня</h1>
-    <p>Всё что нужно знать о курсе</p>
+<!-- DIARY -->
+<div class="page tab-page" id="tab-diary">
+  <div class="greeting"><h1 style="font-size:1.45rem">Дневник</h1><p id="diary-date-lbl"></p></div>
+  <div class="diary-card card">
+    <div style="font-family:'Syne',sans-serif;font-size:0.84rem;font-weight:600;margin-bottom:0.2rem">Как кожа сегодня?</div>
+    <div style="font-size:0.73rem;color:var(--muted2);margin-bottom:0.45rem">1 — очень плохо, 5 — отлично</div>
+    <div class="skin-scale">
+      <button class="skin-btn" onclick="setSkinScore(1)">😖<br><span>1</span></button>
+      <button class="skin-btn" onclick="setSkinScore(2)">😕<br><span>2</span></button>
+      <button class="skin-btn" onclick="setSkinScore(3)">😐<br><span>3</span></button>
+      <button class="skin-btn" onclick="setSkinScore(4)">🙂<br><span>4</span></button>
+      <button class="skin-btn" onclick="setSkinScore(5)">😊<br><span>5</span></button>
+    </div>
+    <textarea class="diary-note" id="diary-note" placeholder="Заметки: сухость, покраснение, настроение..." rows="3"></textarea>
+    <button class="btn-save" id="btn-save-diary" onclick="saveDiaryEntry()">💾 Сохранить запись</button>
   </div>
+  <div class="card">
+    <div style="font-family:'Syne',sans-serif;font-size:0.84rem;font-weight:600;margin-bottom:0.2rem">Побочные эффекты сегодня</div>
+    <div style="font-size:0.73rem;color:var(--muted2)">Отмечай что чувствуешь</div>
+    <div class="effects-grid" id="effects-grid"></div>
+    <button class="btn-save" style="margin-top:0.8rem" onclick="saveEffects()">💾 Сохранить побочки</button>
+  </div>
+  <div class="checklist-card card">
+    <div class="cl-title">☀️ Утренний чеклист</div>
+    <div id="morning-checks"></div>
+  </div>
+  <div class="checklist-card card">
+    <div class="cl-title">🌙 Вечерний чеклист</div>
+    <div id="evening-checks"></div>
+  </div>
+  <p class="stitle">История записей</p>
+  <div id="diary-history"></div>
+</div>
+
+<!-- PHOTO -->
+<div class="page tab-page" id="tab-progress">
+  <div class="greeting"><h1 style="font-size:1.45rem">Фото прогресса</h1><p>Снимай раз в неделю</p></div>
+  <div class="card">
+    <div style="font-size:0.77rem;color:var(--muted2);margin-bottom:0.8rem;line-height:1.6">📸 Фото хранятся локально на устройстве. Нажми слот чтобы добавить или обновить снимок.</div>
+    <div class="photo-grid" id="photo-grid"></div>
+    <input type="file" id="photo-input" accept="image/*" capture="user" onchange="handlePhotoUpload(event)">
+  </div>
+  <div class="card" style="text-align:center;padding:1.4rem">
+    <div style="font-size:1.8rem;margin-bottom:0.45rem">🔄</div>
+    <div style="font-family:'Syne',sans-serif;font-size:0.88rem;font-weight:600;margin-bottom:0.35rem">Следи за прогрессом</div>
+    <div style="font-size:0.78rem;color:var(--muted2);line-height:1.6">Добавляй фото каждую неделю и наблюдай как меняется кожа с первого дня до сейчас.</div>
+  </div>
+</div>
+
+<!-- TIPS -->
+<div class="page tab-page" id="tab-tips">
+  <div class="greeting"><h1 style="font-size:1.45rem">Советы</h1><p>Всё что нужно знать о курсе</p></div>
   <div id="tips-list"></div>
 </div>
 
-
 <script>
-// ── CONFIG ────────────────────────────────────────────────────────
-const PILLS = {
-  kutris:  { total: 60, label: 'Кутерис',    icon: '💊', perDay: 2, color: 'var(--accent1)' },
-  antibio: { total: 20, label: 'Антибиотик', icon: '🧬', perDay: 2, color: 'var(--accent3)' },
+// ── CONFIG ────────────────────────────────────────────────
+const PILLS={
+  kutris: {total:60,label:'Кутерис',icon:'💊',perDay:2,circ:245.0},
+  antibio:{total:20,label:'Антибиотик',icon:'🧬',perDay:2,circ:245.0},
 };
-const CIRC = 263.9;
-
-const tips = [
-  { cat:'Приём', emoji:'⏰', text:'Принимай обе таблетки в одно и то же время каждый день — так уровень в крови будет стабильным и эффект максимальным.' },
-  { cat:'Кутерис', emoji:'🌙', text:'Кутерис лучше принимать вечером — кожа активнее обновляется ночью, и побочки (сухость, покраснение) будут менее заметны днём.' },
-  { cat:'Антибиотик', emoji:'🥛', text:'Запивай антибиотик полным стаканом воды (200мл). Избегай молока, сока и газировки — они снижают всасывание.' },
-  { cat:'Микрофлора', emoji:'🌿', text:'Принимай пробиотики (йогурт, кефир, Линекс) во время курса антибиотика. Но делай паузу 2 часа между пробиотиком и антибиотиком.' },
-  { cat:'Солнце', emoji:'☀️', text:'SPF 30–50 каждое утро — обязательно! Кутерис делает кожу в 3 раза чувствительнее к ультрафиолету. Даже в пасмурный день.' },
-  { cat:'Кожа', emoji:'💧', text:'Используй лёгкий некомедогенный увлажнитель дважды в день. Кутерис сушит кожу — это нормально, но увлажнение помогает переносить курс легче.' },
-  { cat:'Питание', emoji:'🥑', text:'Жирная еда (авокадо, орехи, рыба) улучшает всасывание кутериса. Принимай таблетку с едой, содержащей жиры — эффективность вырастает на 60%.' },
-  { cat:'Алкоголь', emoji:'🚫', text:'Алкоголь несовместим с антибиотиком — снижает эффективность и нагружает печень. Полный запрет на весь курс. После — можно.' },
-  { cat:'Антибиотик', emoji:'⚠️', text:'Не прерывай курс антибиотика досрочно — даже если стало лучше! Недолеченная инфекция возвращается сильнее и с резистентностью.' },
-  { cat:'Кутерис', emoji:'🖐️', text:'Не трогай лицо руками в течение дня. Акне любит сальные кончики пальцев — убираем этот фактор полностью.' },
-  { cat:'Сон', emoji:'😴', text:'Кожа восстанавливается во сне. 7–8 часов — не роскошь, а часть лечения. Кутерис + хороший сон = двойной удар по акне.' },
-  { cat:'Стресс', emoji:'🧘', text:'Кортизол (гормон стресса) провоцирует акне. Медитация, прогулки, любимая музыка — всё это реально помогает коже.' },
-  { cat:'Очищение', emoji:'🧼', text:'Умывайся мягким гелем без спирта и абразивов — дважды в день. Не трёшь, не скрабируешь. Кутерис уже делает всё за тебя изнутри.' },
-  { cat:'Одежда', emoji:'👕', text:'Меняй наволочку раз в 2–3 дня. Бактерии и кожный жир накапливаются на ткани и снова переходят на кожу — особенно на щёках.' },
-  { cat:'Ожидания', emoji:'📈', text:'Первые 2–4 недели могут быть хуже — это «обострение» (purging). Нормальная реакция! Кутерис выгоняет всё накопленное. Держись — потом станет лучше.' },
-  { cat:'Кутерис', emoji:'💊', text:'Кутерис (изотретиноин) — самое мощное лекарство от акне. 85% пациентов достигают ремиссии. Ты на правильном пути!' },
-  { cat:'Губы', emoji:'💋', text:'Бальзам для губ — твой новый лучший друг. Кутерис сушит губы сильнее всего остального. Бальзам в кармане = комфорт целый день.' },
-  { cat:'Вода', emoji:'🫗', text:'Пей 1.5–2 литра воды в день. Гидратация изнутри работает лучше любого крема — помогает коже переносить сухость от кутериса.' },
-  { cat:'Анализы', emoji:'🩸', text:'Не забывай про анализы крови раз в месяц — кутерис влияет на липиды и печень. Это стандартный контроль, ничего страшного.' },
-  { cat:'Мотивация', emoji:'🏁', text:'60 дней — это всего 2 месяца. За это время ты можешь полностью поменять состояние кожи на годы вперёд. Игра стоит свеч!' },
+const LEVELS=[
+  {name:'Новичок',icon:'⭐',days:0,next:7},
+  {name:'Боец',icon:'🥊',days:7,next:14},
+  {name:'Стойкий',icon:'🛡️',days:14,next:21},
+  {name:'Герой',icon:'🏅',days:21,next:30},
+  {name:'Чемпион',icon:'🏆',days:30,next:45},
+  {name:'Легенда',icon:'👑',days:45,next:60},
 ];
+const ACHIEVEMENTS=[
+  {id:'day1',  emoji:'🌱',name:'Первый день',  check:s=>keys(s.kutris.taken)>=1},
+  {id:'week1', emoji:'🔥',name:'Неделя',       check:s=>calcStreak(s)>=7},
+  {id:'day10', emoji:'💎',name:'10 дней',      check:s=>keys(s.kutris.taken)>=10},
+  {id:'week3', emoji:'🦁',name:'3 недели',     check:s=>calcStreak(s)>=21},
+  {id:'month1',emoji:'🎖️',name:'Месяц',       check:s=>keys(s.kutris.taken)>=30},
+  {id:'no_miss',emoji:'💯',name:'Без пропусков',check:s=>calcStreak(s)===keys(s.kutris.taken)&&keys(s.kutris.taken)>0},
+  {id:'antibio',emoji:'🧬',name:'Антибиотик',  check:s=>keys(s.antibio.taken)>=20,gold:true},
+  {id:'half',  emoji:'🎯',name:'Полпути',      check:s=>keys(s.kutris.taken)>=30},
+  {id:'finish',emoji:'🏁',name:'Финиш!',       check:s=>keys(s.kutris.taken)>=60,gold:true},
+];
+const SIDE_EFFECTS=['Сухость кожи','Сухость губ','Шелушение','Покраснение','Зуд','Головная боль','Слабость','Тошнота','Чувств. к солнцу','Ломкость ногтей'];
+const MORNING=['Выпил таблетки','Нанёс SPF 30+','Умылся гелем','Нанёс увлажнитель'];
+const EVENING=['Выпил таблетки','Умылся перед сном','Нанёс увлажнитель','Сменил наволочку','Бальзам на губы'];
+const WEEK_LABELS=['Неделя 1','Неделя 2','Неделя 3','Неделя 4','Неделя 5','Неделя 6','Неделя 7','Неделя 8'];
+const tips=[
+  {cat:'Приём',emoji:'⏰',text:'Принимай обе таблетки в одно и то же время каждый день — уровень в крови будет стабильным и эффект максимальным.'},
+  {cat:'Кутерис',emoji:'🌙',text:'Кутерис лучше принимать вечером — кожа активнее обновляется ночью, и побочки будут менее заметны днём.'},
+  {cat:'Антибиотик',emoji:'🥛',text:'Запивай антибиотик полным стаканом воды (200мл). Никакого молока, сока и газировки — снижают всасывание.'},
+  {cat:'Микрофлора',emoji:'🌿',text:'Принимай пробиотики во время курса антибиотика. Делай паузу 2 часа между пробиотиком и антибиотиком.'},
+  {cat:'Солнце',emoji:'☀️',text:'SPF 30–50 каждое утро — обязательно! Кутерис делает кожу в 3 раза чувствительнее к ультрафиолету. Даже в пасмурный день.'},
+  {cat:'Кожа',emoji:'💧',text:'Лёгкий некомедогенный увлажнитель дважды в день. Кутерис сушит — увлажнение помогает переносить курс легче.'},
+  {cat:'Питание',emoji:'🥑',text:'Жирная еда (авокадо, орехи, рыба) улучшает всасывание кутериса на 60%. Принимай таблетку с едой.'},
+  {cat:'Алкоголь',emoji:'🚫',text:'Алкоголь несовместим с антибиотиком — снижает эффективность. Полный запрет на весь курс.'},
+  {cat:'Антибиотик',emoji:'⚠️',text:'Не прерывай курс антибиотика досрочно — даже если стало лучше! Недолеченная инфекция возвращается сильнее.'},
+  {cat:'Кутерис',emoji:'🖐️',text:'Не трогай лицо руками. Акне любит сальные кончики пальцев — убираем этот фактор полностью.'},
+  {cat:'Сон',emoji:'😴',text:'Кожа восстанавливается во сне. 7–8 часов — не роскошь, а часть лечения. Кутерис + хороший сон = двойной удар.'},
+  {cat:'Стресс',emoji:'🧘',text:'Кортизол провоцирует акне. Медитация, прогулки, любимая музыка — всё это реально помогает коже.'},
+  {cat:'Очищение',emoji:'🧼',text:'Умывайся мягким гелем без спирта дважды в день. Не скрабируй — кутерис уже делает всё изнутри.'},
+  {cat:'Одежда',emoji:'👕',text:'Меняй наволочку раз в 2–3 дня. Бактерии на ткани переходят на кожу — особенно на щёках.'},
+  {cat:'Ожидания',emoji:'📈',text:'Первые 2–4 недели могут быть хуже — это purging. Нормальная реакция! Держись — потом станет лучше.'},
+  {cat:'Кутерис',emoji:'💊',text:'Кутерис (изотретиноин) — самое мощное лекарство от акне. 85% пациентов достигают ремиссии.'},
+  {cat:'Губы',emoji:'💋',text:'Бальзам для губ — твой новый лучший друг. Кутерис сушит губы сильнее всего остального.'},
+  {cat:'Вода',emoji:'🫗',text:'Пей 1.5–2 литра воды в день. Гидратация изнутри работает лучше любого крема.'},
+  {cat:'Анализы',emoji:'🩸',text:'Анализы крови раз в месяц — кутерис влияет на липиды и печень. Стандартный контроль, ничего страшного.'},
+  {cat:'Мотивация',emoji:'🏁',text:'60 дней — это всего 2 месяца. За это время ты полностью поменяешь состояние кожи на годы вперёд.'},
+];
+const tipCats={'Кутерис':['Кутерис'],'Антибиотик':['Антибиотик','Микрофлора'],'Уход за кожей':['Кожа','Очищение','Губы','Солнце'],'Образ жизни':['Питание','Алкоголь','Сон','Стресс','Вода','Одежда'],'Важно знать':['Приём','Ожидания','Мотивация','Анализы']};
 
-// Group tips by category for the tips page
-const tipCategories = {
-  'Кутерис':    ['Кутерис'],
-  'Антибиотик': ['Антибиотик', 'Микрофлора'],
-  'Уход за кожей': ['Кожа', 'Очищение', 'Губы', 'Солнце'],
-  'Образ жизни': ['Питание', 'Алкоголь', 'Сон', 'Стресс', 'Вода', 'Одежда'],
-  'Важно знать': ['Приём', 'Ожидания', 'Мотивация', 'Анализы'],
-};
+// ── FIREBASE ──────────────────────────────────────────────
+const fbCfg={apiKey:"AIzaSyAYxZOmHLiUpONeRVIpwt8QbmemJuPisS8",authDomain:"acne-ac61d.firebaseapp.com",databaseURL:"https://acne-ac61d-default-rtdb.firebaseio.com",projectId:"acne-ac61d",storageBucket:"acne-ac61d.firebasestorage.app",messagingSenderId:"73729450722",appId:"1:73729450722:web:ec16e0913ded121cca74bb"};
+firebase.initializeApp(fbCfg);
+const db=firebase.database(), REF=db.ref('azizjon');
 
-// ── FIREBASE ──────────────────────────────────────────────────────
-const firebaseConfig = {
-  apiKey: "AIzaSyAYxZOmHLiUpONeRVIpwt8QbmemJuPisS8",
-  authDomain: "acne-ac61d.firebaseapp.com",
-  databaseURL: "https://acne-ac61d-default-rtdb.firebaseio.com",
-  projectId: "acne-ac61d",
-  storageBucket: "acne-ac61d.firebasestorage.app",
-  messagingSenderId: "73729450722",
-  appId: "1:73729450722:web:ec16e0913ded121cca74bb"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
-const REF = db.ref('azizjon');
+// ── STATE ─────────────────────────────────────────────────
+let currentTip=0,calYear,calMonth,deferredPrompt=null,fbReady=false;
+let currentSkinScore=0,activeEffects=new Set(),activePhotoSlot=null,todayChecks={morning:{},evening:{}};
+let state={kutris:{taken:{}},antibio:{taken:{}},diary:{},checks:{},streak:0};
 
-// ── STATE ─────────────────────────────────────────────────────────
-let currentTip = 0;
-let calYear, calMonth;
-let deferredPrompt = null;
-let state = defaultState();
-let fbReady = false;
-
-function localDateStr(d) {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
+// ── HELPERS ───────────────────────────────────────────────
+function lds(d){return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+function today(){return lds(new Date())}
+function keys(o){return Object.keys(o||{}).length}
+function getTaken(p){return keys(state[p].taken)}
+function setStatus(m,c){const e=document.getElementById('sync-status');if(!e)return;e.textContent=m;e.style.color=c||'var(--muted2)'}
+function buildTaken(days){const o={},n=new Date();for(let i=0;i<days;i++){const d=new Date(n);d.setDate(d.getDate()-days+i);o[lds(d)]=true}return o}
+function calcStreak(s){let st=0;const n=new Date();for(let i=0;i<120;i++){const d=new Date(n);d.setDate(d.getDate()-i);if((s.kutris.taken||{})[lds(d)]){st++}else{if(i===0)continue;break}}return st}
+function computeStreak(){return calcStreak(state)}
+function norm(s){
+  if(!s.kutris)  s.kutris={taken:{}};
+  if(!s.antibio) s.antibio={taken:{}};
+  if(!s.kutris.taken)  s.kutris.taken={};
+  if(!s.antibio.taken) s.antibio.taken={};
+  if(!s.diary)   s.diary={};
+  if(!s.checks)  s.checks={};
+  return s;
 }
-function todayStr() {
-  return localDateStr(new Date());
+function save(){
+  localStorage.setItem('aziz-v5',JSON.stringify(state));
+  REF.set(state).then(()=>{setStatus('✓ Сохранено','var(--a3)');setTimeout(()=>setStatus(''),2000)})
+    .catch(()=>{setStatus('⚠️ Нет связи — сохранено локально','var(--a4)');setTimeout(()=>setStatus(''),3000)});
 }
-function buildDefaultTaken(days) {
-  // days already done = ending YESTERDAY
-  const obj = {};
-  const now = new Date();
-  for (let i = 0; i < days; i++) {
-    const d = new Date(now);
-    d.setDate(d.getDate() - days + i);
-    obj[localDateStr(d)] = true;
-  }
-  return obj;
-}
-function defaultState() {
-  return {
-    kutris:  { taken: buildDefaultTaken(6) },
-    antibio: { taken: buildDefaultTaken(5) },
-    streak: 6,
-  };
-}
-function getTaken(pill) { return Object.keys(state[pill].taken).length; }
 
-// ── СТРИК — вычисляется из реальных данных ────────────────────────
-function computeStreak() {
-  // считаем сколько дней подряд ДО сегодня (включая сегодня если принято)
-  // берём за основу кутерис как главный курс
-  let streak = 0;
-  const now = new Date();
-  for (let i = 0; i < 120; i++) {
-    const d = new Date(now);
-    d.setDate(d.getDate() - i);
-    const ds = localDateStr(d);
-    if (state.kutris.taken[ds]) {
-      streak++;
-    } else {
-      // если сегодня ещё не принято — не ломаем стрик, продолжаем
-      if (i === 0) continue;
-      break;
+// ── FIREBASE INIT ─────────────────────────────────────────
+function initFB(){
+  setStatus('🔄 Загрузка...','var(--muted2)');
+  const cache=localStorage.getItem('aziz-v5');
+  if(cache){try{state=norm(JSON.parse(cache));render();animateRings()}catch(e){}}
+  REF.once('value').then(snap=>{
+    const data=snap.val();
+    if(data&&data.kutris&&data.antibio){state=norm(data)}
+    else if(cache){try{state=norm(JSON.parse(cache));REF.set(state);setStatus('☁️ Восстановлено в облако','var(--a3)');setTimeout(()=>setStatus(''),3000)}catch(e){
+      state=norm({kutris:{taken:buildTaken(19)},antibio:{taken:buildTaken(6)},diary:{},checks:{},streak:19});
+      REF.set(state);
+    }}
+    else{
+      // нет данных нигде — тихо ставим разумный дефолт, без диалога
+      state=norm({kutris:{taken:buildTaken(19)},antibio:{taken:buildTaken(5)},diary:{},checks:{},streak:19});
+      REF.set(state);
     }
-  }
-  return streak;
-}
-
-// показать индикатор загрузки/синхронизации
-function setStatus(msg, color) {
-  let el = document.getElementById('sync-status');
-  if (!el) return;
-  el.textContent = msg;
-  el.style.color = color || 'var(--muted2)';
-}
-
-// сохранить в Firebase
-function saveState() {
-  localStorage.setItem('aziz-pills-cache', JSON.stringify(state));
-  REF.set(state).then(() => {
-    setStatus('✓ Сохранено', 'var(--accent3)');
-    setTimeout(() => setStatus(''), 2000);
-  }).catch(err => {
-    console.warn('Firebase save error:', err);
-    setStatus('⚠️ Нет связи — данные сохранены локально', 'var(--accent4)');
-    setTimeout(() => setStatus(''), 3000);
-  });
-}
-
-// подписаться на изменения из Firebase (realtime sync)
-function initFirebase() {
-  setStatus('🔄 Загрузка...', 'var(--muted2)');
-
-  // сначала грузим кэш чтобы не было пустого экрана
-  const cached = localStorage.getItem('aziz-pills-cache');
-  if (cached) {
-    try {
-      state = JSON.parse(cached);
-      if (!state.kutris.taken)  state.kutris.taken  = {};
-      if (!state.antibio.taken) state.antibio.taken = {};
-      render();
-      animateRingsDelayed();
-    } catch(e) {}
-  }
-
-  REF.once('value').then(snap => {
-    const data = snap.val();
-
-    if (data && data.kutris && data.antibio) {
-      // Firebase вернул данные — используем их
-      state = data;
-      if (!state.kutris.taken)  state.kutris.taken  = {};
-      if (!state.antibio.taken) state.antibio.taken = {};
-    } else if (cached) {
-      // Firebase пустой, но есть локальный кэш — НЕ сбрасываем,
-      // загружаем из кэша и сразу пишем в Firebase
-      try {
-        state = JSON.parse(cached);
-        if (!state.kutris.taken)  state.kutris.taken  = {};
-        if (!state.antibio.taken) state.antibio.taken = {};
-        REF.set(state); // восстанавливаем Firebase из кэша
-        setStatus('☁️ Данные восстановлены в облако', 'var(--accent3)');
-        setTimeout(() => setStatus(''), 3000);
-      } catch(e) { state = defaultState(); REF.set(state); }
-    } else {
-      // ни Firebase, ни кэша — реально первый запуск, спрашиваем
-      showFirstRunDialog();
-      return;
-    }
-
-    localStorage.setItem('aziz-pills-cache', JSON.stringify(state));
-    fbReady = true;
-    setStatus('');
-    render();
-    animateRingsDelayed();
-
-    // слушаем изменения в реальном времени
-    REF.on('value', snap2 => {
-      if (!fbReady) return;
-      const d2 = snap2.val();
-      if (d2 && d2.kutris && d2.antibio) {
-        state = d2;
-        if (!state.kutris.taken)  state.kutris.taken  = {};
-        if (!state.antibio.taken) state.antibio.taken = {};
-        localStorage.setItem('aziz-pills-cache', JSON.stringify(state));
-        render();
-        if (document.getElementById('nav-calendar').classList.contains('active')) renderCalendar();
-      }
+    localStorage.setItem('aziz-v5',JSON.stringify(state));
+    fbReady=true;setStatus('');render();animateRings();
+    REF.on('value',s2=>{
+      if(!fbReady)return;
+      const d2=s2.val();
+      if(d2&&d2.kutris&&d2.antibio){state=norm(d2);localStorage.setItem('aziz-v5',JSON.stringify(state));render();if(!document.getElementById('tab-calendar').classList.contains('active'))return;renderCalendar()}
     });
-
-  }).catch(err => {
-    console.warn('Firebase load error:', err);
-    if (cached) {
-      try { state = JSON.parse(cached); } catch(e) { state = defaultState(); }
-    } else {
-      state = defaultState();
-    }
-    if (!state.kutris.taken)  state.kutris.taken  = {};
-    if (!state.antibio.taken) state.antibio.taken = {};
-    fbReady = true;
-    setStatus('📵 Офлайн — данные из кэша', 'var(--accent4)');
-    setTimeout(() => setStatus(''), 4000);
-    render();
-    animateRingsDelayed();
+  }).catch(()=>{
+    if(cache){try{state=norm(JSON.parse(cache))}catch(e){}}
+    fbReady=true;setStatus('📵 Офлайн — данные из кэша','var(--a4)');setTimeout(()=>setStatus(''),4000);render();animateRings();
   });
 }
 
-// диалог первого запуска — вводим реальное количество дней
-function showFirstRunDialog() {
-  const overlay = document.createElement('div');
-  overlay.style.cssText = `
-    position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;
-    display:flex;align-items:center;justify-content:center;padding:1.5rem;
-  `;
-  overlay.innerHTML = `
-    <div style="background:#1e2330;border:1px solid rgba(255,255,255,0.1);border-radius:24px;padding:1.75rem;max-width:340px;width:100%;">
-      <div style="font-size:2rem;text-align:center;margin-bottom:0.75rem;">💊</div>
-      <div style="font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;text-align:center;margin-bottom:0.5rem;">Первый запуск</div>
-      <div style="font-size:0.85rem;color:#9aa0b8;text-align:center;margin-bottom:1.25rem;line-height:1.6;">Сколько дней ты уже принимаешь каждый препарат?</div>
-      <div style="margin-bottom:0.9rem;">
-        <label style="font-size:0.78rem;color:#6b7490;display:block;margin-bottom:0.4rem;">💊 Кутерис (дней принято)</label>
-        <input id="fr-kutris" type="number" min="0" max="60" value="14"
-          style="width:100%;padding:0.7rem 1rem;border-radius:12px;border:1px solid rgba(255,255,255,0.12);background:#0d0f14;color:#f0f2f8;font-size:1rem;font-family:'DM Sans',sans-serif;">
-      </div>
-      <div style="margin-bottom:1.25rem;">
-        <label style="font-size:0.78rem;color:#6b7490;display:block;margin-bottom:0.4rem;">🧬 Антибиотик (дней принято)</label>
-        <input id="fr-antibio" type="number" min="0" max="20" value="5"
-          style="width:100%;padding:0.7rem 1rem;border-radius:12px;border:1px solid rgba(255,255,255,0.12);background:#0d0f14;color:#f0f2f8;font-size:1rem;font-family:'DM Sans',sans-serif;">
-      </div>
-      <button id="fr-save" style="width:100%;padding:0.9rem;border-radius:13px;border:none;background:linear-gradient(135deg,#7c6aff,#a855f7);color:#fff;font-size:1rem;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;">
-        Сохранить и начать
-      </button>
-    </div>
-  `;
-  document.body.appendChild(overlay);
-  document.getElementById('fr-save').onclick = () => {
-    const kDays = Math.max(0, parseInt(document.getElementById('fr-kutris').value) || 0);
-    const aDays = Math.max(0, parseInt(document.getElementById('fr-antibio').value) || 0);
-    state = {
-      kutris:  { taken: buildDefaultTaken(kDays) },
-      antibio: { taken: buildDefaultTaken(aDays) },
-      streak: kDays,
-    };
-    REF.set(state);
-    localStorage.setItem('aziz-pills-cache', JSON.stringify(state));
-    overlay.remove();
-    fbReady = true;
-    setStatus('');
-    render();
-    animateRingsDelayed();
-  };
-}
-
-function animateRingsDelayed() {
-  setTimeout(() => {
-    Object.keys(PILLS).forEach(pill => {
-      const t = getTaken(pill);
-      document.getElementById(`ring-${pill}`).style.strokeDashoffset = CIRC - CIRC * t / PILLS[pill].total;
+function animateRings(){
+  setTimeout(()=>{
+    ['kutris','antibio'].forEach(p=>{
+      const t=getTaken(p),c=PILLS[p];
+      document.getElementById(`ring-${p}`).style.strokeDashoffset=c.circ-c.circ*t/c.total;
     });
-  }, 150);
+  },150);
 }
 
-// ── NAV ───────────────────────────────────────────────────────────
-function showTab(tab) {
-  document.querySelectorAll('.tab-page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('tab-' + tab).classList.add('active');
-  document.getElementById('nav-' + tab).classList.add('active');
-  if (tab === 'calendar') renderCalendar();
-  if (tab === 'tips') renderTipsPage();
-}
+// ── RENDER ────────────────────────────────────────────────
+function render(){
+  const now=new Date(),tod=today(),h=now.getHours();
+  document.getElementById('date-text').textContent=now.toLocaleDateString('ru-RU',{weekday:'long',day:'numeric',month:'long'});
+  document.getElementById('greeting-sub').textContent=h<12?'Доброе утро! Не забудь про таблетки 🌅':h<17?'Держишь ритм — это уже победа 💪':h<21?'Вечер — хорошее время для таблеток 🌆':'Не забудь принять таблетки перед сном 🌙';
 
-// ── HOME RENDER ───────────────────────────────────────────────────
-function render() {
-  const today = todayStr();
-  const now = new Date();
-
-  // Date
-  document.getElementById('date-text').textContent =
-    now.toLocaleDateString('ru-RU', { weekday:'long', day:'numeric', month:'long' });
-
-  // Greeting sub
-  const hour = now.getHours();
-  const subs = hour < 12 ? 'Доброе утро! Не забудь про таблетки 🌅'
-             : hour < 17 ? 'Держишь ритм — это уже победа 💪'
-             : hour < 21 ? 'Вечер — хорошее время для таблеток 🌆'
-             : 'Не забудь принять таблетки перед сном 🌙';
-  document.getElementById('greeting-sub').textContent = subs;
-
-  ['kutris','antibio'].forEach(pill => {
-    const cfg   = PILLS[pill];
-    const taken = getTaken(pill);
-    const pct   = Math.round(taken / cfg.total * 100);
-    const offset = CIRC - (CIRC * taken / cfg.total);
-
-    document.getElementById(`ring-${pill}`).style.strokeDashoffset = offset;
-    document.getElementById(`count-${pill}`).textContent = taken;
-    document.getElementById(`total-${pill}`).textContent = `из ${cfg.total}`;
-    document.getElementById(`pct-${pill}`).textContent = pct + '%';
-
-    const descs = {
-      kutris: ['Путь начался — впереди чистая кожа!','Первые дни позади! Хорошо держишься.','Кожа уже начинает обновляться изнутри.','Четверть пути! Акне уже нервничает 🎯','Половина! Кутерис работает на полную.','Финишная прямая — кожа сияет! ✨'],
-      antibio:['Антибиотик уже в деле, бактерии нервничают.','Организм под надёжной защитой.','Курс идёт отлично — так держать!','Четверть позади — ты молодец! 🎯','Половина! Ты настоящий герой.','Финал близко — победа неизбежна! 🏆'],
-    };
-    const di = Math.min(Math.floor(pct/20), 5);
-    document.getElementById(`desc-${pill}`).textContent = descs[pill][di];
-
-    const isTakenToday = !!state[pill].taken[today];
-    const badge = document.getElementById(`badge-${pill}`);
-    const btn   = document.getElementById(`btn-${pill}`);
-    badge.classList.toggle('visible', isTakenToday);
-    btn.disabled = isTakenToday;
-    if (isTakenToday) {
-      btn.innerHTML = `<span style="font-size:1.1rem">✓</span> Принято сегодня!`;
-      btn.style.opacity = '0.55';
-    } else {
-      btn.innerHTML = pill==='kutris'
-        ? `<span style="font-size:1.1rem">💊</span> Принял ${cfg.perDay} таблетки Кутериса`
-        : `<span style="font-size:1.1rem">🧬</span> Принял ${cfg.perDay} таблетки Антибиотика`;
-      btn.style.opacity = '1';
-    }
+  ['kutris','antibio'].forEach(p=>{
+    const c=PILLS[p],t=getTaken(p),pct=Math.round(t/c.total*100);
+    document.getElementById(`ring-${p}`).style.strokeDashoffset=c.circ-c.circ*t/c.total;
+    document.getElementById(`count-${p}`).textContent=t;
+    document.getElementById(`total-${p}`).textContent=`из ${c.total}`;
+    document.getElementById(`pct-${p}`).textContent=pct+'%';
+    const descs={kutris:['Путь начался!','Первые дни позади!','Кожа обновляется.','Четверть пути! 🎯','Половина! 💪','Финишная прямая! ✨'],antibio:['Антибиотик в деле!','Под защитой.','Курс идёт отлично!','Четверть позади 🎯','Половина! Герой.','Финал близко! 🏆']};
+    document.getElementById(`desc-${p}`).textContent=descs[p][Math.min(Math.floor(pct/20),5)];
+    const it=!!(state[p].taken||{})[tod];
+    document.getElementById(`badge-${p}`).classList.toggle('on',it);
+    const btn=document.getElementById(`btn-${p}`);
+    btn.disabled=it;btn.style.opacity=it?'0.5':'1';
+    btn.innerHTML=it?'<span>✓</span> Принято сегодня!':`${c.icon} Принял ${c.perDay} таблетки ${c.label}`;
+    const tr=document.getElementById(`timer-${p}`);
+    if(it){tr.innerHTML='<span class="timer-val">✓</span><span>Следующий приём — завтра</span>'}
+    else{const m=new Date();m.setHours(23,59,59,0);const diff=m-now,hh=Math.floor(diff/3600000),mm=Math.floor((diff%3600000)/60000);tr.innerHTML=`<span>Осталось сегодня:</span><span class="timer-val">${hh}ч ${mm}м</span>`}
   });
 
-  // Streak — вычисляем динамически из реальных данных
-  const streak = computeStreak();
-  document.getElementById('streak-num').textContent = streak;
+  const streak=computeStreak();
+  document.getElementById('streak-num').textContent=streak;
 
-  // Motivation — dynamic per day based on computed streak
-  const k = getTaken('kutris');
-  const streak = computeStreak();
-  const motiDay = streak; // используем стрик как номер текущего дня
-  const rem = 60 - k;
-  const dayMotis = {
-    1:  { e:'🌱', t:'День первый — день победы!',       b:'Первый шаг всегда самый важный. Ты начал — значит, уже впереди большинства. Акне не знает, что его ждёт.' },
-    2:  { e:'✌️', t:'День второй — ты уже не новичок!', b:'Два дня подряд — это не случайность, это характер. Кутерис начинает работать на клеточном уровне. Держи темп!' },
-    3:  { e:'🔥', t:'Три дня без остановки!',           b:'Три дня — первый маленький рубеж. Кожа ещё не видит перемен, но внутри уже идёт работа. Верь процессу.' },
-    4:  { e:'💥', t:'День четвёртый — движение началось!', b:'Четыре дня дисциплины подряд. Ты доказываешь себе, что способен на большее. Акне уже чувствует угрозу.' },
-    5:  { e:'⚡', t:'Пятый день — полшага до недели!',  b:'Ещё два дня и будет первая неделя! Антибиотик набирает полную концентрацию в крови. Всё идёт по плану.' },
-    6:  { e:'🎯', t:'Шесть дней — почти неделя!',       b:'Один шаг до первой вехи. Завтра — неделя без пропуска. Ты сильнее, чем думаешь. Не останавливайся!' },
-    7:  { e:'🏆', t:'Первая неделя — сделано!',         b:'7 дней подряд — это уже привычка! Мозг зафиксировал ритм. Акне в шоке, а ты только разгоняешься. Горжусь тобой!' },
-    8:  { e:'🌟', t:'Восемь — больше, чем неделя!',     b:'Ты перешагнул первую неделю и не оглянулся. Кожа начинает первый цикл обновления. Скоро будет заметно.' },
-    9:  { e:'💫', t:'Девять дней — ты машина!',         b:'Почти десять. Большинство сдаётся в первые дни — ты давно прошёл этот момент слабости. Ты другого уровня.' },
-    10: { e:'🎉', t:'День десятый — первый десяток!',   b:'Десять дней без единого пропуска! Первый круглый рубеж. Кутерис уже перестраивает работу сальных желёз.' },
-    14: { e:'🌈', t:'Две недели — невероятно!',         b:'Полных две недели! Кожа прошла первый цикл обновления. Если есть обострение — это нормально, это "purging". Скоро станет лучше.' },
-    21: { e:'🦁', t:'Три недели — ты лев!',             b:'21 день — именно столько нужно для формирования привычки. Поздравляю: приём таблеток стал частью тебя.' },
-    30: { e:'🎖️', t:'Месяц позади — герой!',           b:'Тридцать дней — ровно половина пути! Кожа уже другая. Сальные железы работают иначе. Акне отступает. Ты сделал это.' },
-    45: { e:'🚀', t:'45 дней — финишная прямая!',      b:'Ещё 15 дней и ты завершишь полный курс. Кожа за эти 45 дней обновилась практически полностью. Финальный рывок!' },
-    60: { e:'👑', t:'60 дней — ты чемпион!',           b:'Полный курс завершён! Ты прошёл всё от начала до конца без пропусков. Кожа скажет тебе спасибо на годы вперёд. Легенда!' },
-  };
-  // Find closest day milestone <= k
-  const milestones = Object.keys(dayMotis).map(Number).sort((a,b)=>b-a);
+  // Level
+  const days=getTaken('kutris');
+  const lvl=[...LEVELS].reverse().find(l=>days>=l.days)||LEVELS[0];
+  const nxt=LEVELS[LEVELS.indexOf(lvl)+1];
+  document.getElementById('level-badge').textContent=`${lvl.icon} ${lvl.name}`;
+  if(nxt){const p=Math.round(((days-lvl.days)/(nxt.days-lvl.days))*100);document.getElementById('level-bar').style.width=Math.min(p,100)+'%';document.getElementById('level-xp').textContent=`${days} / ${nxt.days} дней`}
+  else{document.getElementById('level-bar').style.width='100%';document.getElementById('level-xp').textContent='Максимальный уровень!'}
+
+  renderAchievements();
+
+  // Motivation
+  const k=getTaken('kutris'),rem=60-k,s2=streak;
+  const dm={1:{e:'🌱',t:'День первый — день победы!',b:'Первый шаг всегда самый важный. Акне не знает, что его ждёт.'},2:{e:'✌️',t:'День второй!',b:'Два дня подряд — это не случайность, это характер.'},3:{e:'🔥',t:'Три дня без остановки!',b:'Три дня — первый рубеж. Верь процессу.'},4:{e:'💥',t:'День четвёртый!',b:'Четыре дня дисциплины. Акне уже чувствует угрозу.'},5:{e:'⚡',t:'Пятый день!',b:'Ещё два дня и первая неделя! Всё идёт по плану.'},6:{e:'🎯',t:'Шесть — почти неделя!',b:'Один шаг до первой вехи. Ты сильнее, чем думаешь.'},7:{e:'🏆',t:'Первая неделя — сделано!',b:'7 дней подряд — это уже привычка! Горжусь тобой!'},8:{e:'🌟',t:'Больше недели!',b:'Кожа начинает первый цикл обновления. Скоро будет заметно.'},9:{e:'💫',t:'Девять дней!',b:'Почти десять. Ты давно прошёл момент слабости.'},10:{e:'🎉',t:'Первый десяток!',b:'Десять дней без пропуска! Кутерис перестраивает сальные железы.'},14:{e:'🌈',t:'Две недели!',b:'Кожа прошла первый цикл обновления. Purging скоро пройдёт.'},21:{e:'🦁',t:'Три недели — ты лев!',b:'21 день — именно столько нужно для привычки. Поздравляю!'},30:{e:'🎖️',t:'Месяц позади — герой!',b:'Тридцать дней — половина пути! Акне отступает.'},45:{e:'🚀',t:'45 дней — финишная прямая!',b:'Ещё 15 дней и полный курс! Финальный рывок!'},60:{e:'👑',t:'60 дней — ты чемпион!',b:'Полный курс завершён! Кожа скажет спасибо на годы вперёд.'}};
+  const ms=Object.keys(dm).map(Number).sort((a,b)=>b-a);
   let moti;
-  if (dayMotis[motiDay]) {
-    moti = dayMotis[motiDay];
-  } else {
-    const closest = milestones.find(m => m < motiDay);
-    if (closest) {
-      const phases = [
-        { from:0,  e:'💪', t:'Ты на правильном пути!',      b:`${k} дней позади — акне уже паникует. Ещё ${rem} ${rem===1?'день':rem<5?'дня':'дней'} и кожа будет как у звезды Hollywood!` },
-        { from:7,  e:'🌱', t:'Первые ростки прогресса!',    b:`${k} дней без пропуска — это серьёзно. Большинство сдаётся раньше. Ты — не такой. Ещё ${rem} дней и победа!` },
-        { from:14, e:'🏅', t:'Кожа меняется изнутри!',      b:`${k} дней курса позади. Сальные железы перестраиваются. Ещё ${rem} дней — и результат будет виден всем вокруг.` },
-        { from:21, e:'⚡', t:'Привычка сформирована!',      b:`${k} дней дисциплины. Ты доказал себе, что можешь всё. Осталось ${rem} дней — почти дошёл!` },
-        { from:30, e:'🎯', t:'Половина пути за спиной!',    b:`${k} из 60 дней сделаны. Кожа обновилась на клеточном уровне. Ещё ${rem} дней — финишная прямая!` },
-        { from:45, e:'🚀', t:'Финал близко!',               b:`${k} дней позади, осталось всего ${rem}! Ты почти завершил полный курс. Акне не имеет шансов против такой дисциплины.` },
-      ];
-      const phase = [...phases].reverse().find(p => motiDay >= p.from) || phases[0];
-      moti = { e: phase.e, t: phase.t, b: phase.b };
-    } else {
-      moti = { e:'💪', t:'Ты на правильном пути!', b:`${k} дней позади — акне уже паникует. Ещё ${rem} дней и кожа будет сиять!` };
-    }
-  }
-  document.getElementById('moti-emoji').textContent = moti.e;
-  document.getElementById('moti-title').textContent = moti.t;
-  document.getElementById('moti-text').textContent  = moti.b;
+  if(dm[s2]){moti=dm[s2]}
+  else{const cl=ms.find(m=>m<s2);const phases=[{from:0,e:'💪',t:'Ты на правильном пути!',b:`${k} дней позади — акне паникует. Ещё ${rem} дней и кожа будет как у звезды!`},{from:7,e:'🌱',t:'Первые ростки прогресса!',b:`${k} дней без пропуска. Большинство сдаётся раньше. Ты — не такой.`},{from:14,e:'🏅',t:'Кожа меняется изнутри!',b:`${k} дней позади. Сальные железы перестраиваются. Ещё ${rem} дней!`},{from:21,e:'⚡',t:'Привычка сформирована!',b:`${k} дней дисциплины. Осталось ${rem} дней — почти дошёл!`},{from:30,e:'🎯',t:'Половина пути!',b:`${k} из 60 дней. Ещё ${rem} дней — финишная прямая!`},{from:45,e:'🚀',t:'Финал близко!',b:`Осталось всего ${rem}! Акне не имеет шансов.`}];const ph=[...phases].reverse().find(p=>s2>=p.from)||phases[0];moti={e:ph.e,t:ph.t,b:ph.b}}
+  document.getElementById('moti-emoji').textContent=moti.e;
+  document.getElementById('moti-title').textContent=moti.t;
+
+  document.getElementById('moti-text').textContent=moti.b;
 
   renderTipWidget();
+
+  if(getTaken('kutris')>=60&&!localStorage.getItem('comp-shown')){
+    setTimeout(()=>{document.getElementById('completion').classList.remove('hidden');confetti(80);localStorage.setItem('comp-shown','1')},500);
+  }
 }
 
-// ── TAKE PILL ─────────────────────────────────────────────────────
-function takePill(pill) {
-  const today = todayStr();
-  if (state[pill].taken[today]) return;
-  state[pill].taken[today] = true;
-  const bothTaken = !!state.kutris.taken[today] && !!state.antibio.taken[today];
-  if (bothTaken) state.streak++;
-  saveState();
-  render();
-  // quick visual pulse on the button
-  const btn = document.getElementById(`btn-${pill}`);
-  btn.style.transform = 'scale(0.97)';
-  setTimeout(() => { btn.style.transform = ''; }, 150);
+function takePill(p){
+  const tod=today();
+  if((state[p].taken||{})[tod])return;
+  if(!state[p].taken)state[p].taken={};
+  state[p].taken[tod]=true;
+  const both=!!(state.kutris.taken||{})[tod]&&!!(state.antibio.taken||{})[tod];
+  if(both)state.streak=computeStreak();
+  save();render();
+  const btn=document.getElementById(`btn-${p}`);
+  btn.style.transform='scale(0.96)';setTimeout(()=>btn.style.transform='',150);
 }
 
-// ── TIP WIDGET ────────────────────────────────────────────────────
-function renderTipWidget() {
-  const tip = tips[currentTip];
-  document.getElementById('tip-body').textContent = tip.text;
-  document.getElementById('tip-cat-badge').textContent = tip.cat;
-  const dotsEl = document.getElementById('tip-dots');
-  dotsEl.innerHTML = '';
-  tips.forEach((_, i) => {
-    const d = document.createElement('div');
-    d.className = 'tip-dot' + (i===currentTip ? ' active' : '');
-    d.onclick = e => { e.stopPropagation(); currentTip=i; animateTip(); };
-    dotsEl.appendChild(d);
-  });
-}
-function animateTip() {
-  const tb = document.getElementById('tip-body');
-  tb.style.opacity = '0';
-  setTimeout(() => { renderTipWidget(); tb.style.opacity='1'; }, 280);
-}
-function nextTip() { currentTip = (currentTip+1) % tips.length; animateTip(); }
-function prevTip() { currentTip = (currentTip-1+tips.length) % tips.length; animateTip(); }
-
-setInterval(nextTip, 9000);
-
-// ── TIPS PAGE ─────────────────────────────────────────────────────
-function renderTipsPage() {
-  const list = document.getElementById('tips-list');
-  list.innerHTML = '';
-  Object.entries(tipCategories).forEach(([cat, keys]) => {
-    const catTips = tips.filter(t => keys.includes(t.cat));
-    if (!catTips.length) return;
-    const h = document.createElement('div');
-    h.className = 'tips-cat-title';
-    h.textContent = cat;
-    list.appendChild(h);
-    catTips.forEach((tip, i) => {
-      const card = document.createElement('div');
-      card.className = 'tips-page-card';
-      card.style.animationDelay = (i*0.04)+'s';
-      card.innerHTML = `
-        <div class="tip-emoji">${tip.emoji}</div>
-        <div class="tip-content">
-          <div class="tip-content-cat">${tip.cat}</div>
-          <div class="tip-content-text">${tip.text}</div>
-        </div>`;
-      list.appendChild(card);
-    });
+// ── ACHIEVEMENTS ──────────────────────────────────────────
+function renderAchievements(){
+  const g=document.getElementById('ach-grid');g.innerHTML='';
+  ACHIEVEMENTS.forEach(a=>{
+    const u=a.check(state);
+    const d=document.createElement('div');
+    d.className='ach-item'+(u?' unlocked':'')+(u&&a.gold?' gold':'');
+    d.innerHTML=`<span class="ach-emoji">${a.emoji}</span><div class="ach-name">${a.name}</div>`;
+    g.appendChild(d);
   });
 }
 
-// ── CALENDAR ──────────────────────────────────────────────────────
-function initCal() {
-  const now = new Date();
-  calYear  = now.getFullYear();
-  calMonth = now.getMonth();
+// ── CHECKLIST ─────────────────────────────────────────────
+function renderChecks(){
+  const tod=today();
+  if(!state.checks[tod])state.checks[tod]={morning:{},evening:{}};
+  todayChecks=state.checks[tod];
+  if(!todayChecks.morning)todayChecks.morning={};
+  if(!todayChecks.evening)todayChecks.evening={};
+  renderCL('morning-checks',MORNING,'morning');
+  renderCL('evening-checks',EVENING,'evening');
+}
+function renderCL(elId,items,type){
+  const el=document.getElementById(elId);el.innerHTML='';
+  items.forEach((label,i)=>{
+    const done=!!todayChecks[type][i];
+    const div=document.createElement('div');
+    div.className='check-item'+(done?' done':'');
+    div.innerHTML=`<div class="check-box">${done?'✓':''}</div><div class="check-label">${label}</div>`;
+    div.onclick=()=>{todayChecks[type][i]=!todayChecks[type][i];state.checks[today()]=todayChecks;save();renderCL(elId,items,type)};
+    el.appendChild(div);
+  });
 }
 
-function renderCalendar() {
-  const today = todayStr();
-  const now   = new Date();
-  const monthNames = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
-  const wdays = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+// ── DIARY ─────────────────────────────────────────────────
+function initDiary(){
+  const tod=today();
+  document.getElementById('diary-date-lbl').textContent='Сегодня, '+new Date().toLocaleDateString('ru-RU',{day:'numeric',month:'long'});
+  const e=state.diary[tod]||{};
+  if(e.score)setSkinScore(e.score);
+  else{currentSkinScore=0;document.querySelectorAll('.skin-btn').forEach(b=>b.classList.remove('active'))}
+  document.getElementById('diary-note').value=e.note||'';
+  const eg=document.getElementById('effects-grid');eg.innerHTML='';
+  activeEffects=new Set(e.effects||[]);
+  SIDE_EFFECTS.forEach(ef=>{const btn=document.createElement('button');btn.className='ef-chip'+(activeEffects.has(ef)?' active':'');btn.textContent=ef;btn.onclick=()=>{if(activeEffects.has(ef))activeEffects.delete(ef);else activeEffects.add(ef);btn.classList.toggle('active')};eg.appendChild(btn)});
+}
+function setSkinScore(n){currentSkinScore=n;document.querySelectorAll('.skin-btn').forEach((b,i)=>b.classList.toggle('active',i+1===n))}
+function saveDiaryEntry(){
+  const tod=today();
+  if(!state.diary)state.diary={};
+  state.diary[tod]={...(state.diary[tod]||{}),score:currentSkinScore,note:document.getElementById('diary-note').value,date:tod};
+  save();renderDiaryHistory();
+  const btn=document.getElementById('btn-save-diary');const orig=btn.textContent;btn.textContent='✓ Сохранено!';btn.style.color='var(--a3)';setTimeout(()=>{btn.textContent=orig;btn.style.color=''},2000);
+}
+function saveEffects(){
+  const tod=today();if(!state.diary)state.diary={};if(!state.diary[tod])state.diary[tod]={};
+  state.diary[tod].effects=[...activeEffects];save();setStatus('✓ Сохранено','var(--a3)');setTimeout(()=>setStatus(''),2000);
+}
+function renderDiaryHistory(){
+  const el=document.getElementById('diary-history');if(!el)return;el.innerHTML='';
+  const entries=Object.entries(state.diary||{}).sort((a,b)=>b[0].localeCompare(a[0])).slice(0,10);
+  if(!entries.length){el.innerHTML=`<div style="text-align:center;color:var(--muted);font-size:0.82rem;padding:1rem">Записей пока нет</div>`;return}
+  const scoreEmojis=['','😖','😕','😐','🙂','😊'];
+  entries.forEach(([date,e])=>{
+    if(!e.score&&!e.note&&(!e.effects||!e.effects.length))return;
+    const d=new Date(date+'T12:00:00');
+    const div=document.createElement('div');div.className='hist-card';
+    div.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.3rem"><div style="font-size:0.76rem;color:var(--muted2)">${d.toLocaleDateString('ru-RU',{day:'numeric',month:'short'})}</div><div style="font-size:1rem">${e.score?scoreEmojis[e.score]:''}</div></div>${e.note?`<div style="font-size:0.8rem;color:var(--text);line-height:1.5">${e.note}</div>`:''}${e.effects&&e.effects.length?`<div style="font-size:0.7rem;color:var(--muted2);margin-top:0.3rem">${e.effects.join(' · ')}</div>`:''}`;
+    el.appendChild(div);
+  });
+}
 
-  document.getElementById('cal-month-title').textContent = `${monthNames[calMonth]} ${calYear}`;
+// ── CHART ─────────────────────────────────────────────────
+function renderSkinChart(){
+  const canvas=document.getElementById('skin-chart');if(!canvas)return;
+  const ctx=canvas.getContext('2d');
+  const W=canvas.offsetWidth,H=canvas.offsetHeight;
+  canvas.width=W*2;canvas.height=H*2;ctx.scale(2,2);
+  const scores=[],labels=[];
+  for(let i=13;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);const ds=lds(d);scores.push((state.diary[ds]?.score)||0);labels.push(d.getDate()+'')}
+  ctx.clearRect(0,0,W,H);
+  const pad={l:18,r:8,t:8,b:18},cw=W-pad.l-pad.r,ch=H-pad.t-pad.b;
+  ctx.strokeStyle='rgba(255,255,255,0.05)';ctx.lineWidth=0.5;
+  for(let i=1;i<=5;i++){const y=pad.t+ch-(ch*(i/5));ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(pad.l+cw,y);ctx.stroke()}
+  const pts=scores.map((s,i)=>({x:pad.l+(cw*i/(scores.length-1)),y:s>0?pad.t+ch-(ch*(s/5)):null}));
+  const vp=pts.filter(p=>p.y!==null);
+  if(vp.length>1){
+    ctx.beginPath();const g=ctx.createLinearGradient(0,0,0,ch);g.addColorStop(0,'rgba(124,106,255,0.4)');g.addColorStop(1,'rgba(124,106,255,0.02)');ctx.fillStyle=g;
+    ctx.moveTo(vp[0].x,H-pad.b);vp.forEach(p=>ctx.lineTo(p.x,p.y));ctx.lineTo(vp[vp.length-1].x,H-pad.b);ctx.closePath();ctx.fill();
+    ctx.beginPath();ctx.strokeStyle='#7c6aff';ctx.lineWidth=1.5;ctx.lineJoin='round';vp.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y));ctx.stroke();
+    vp.forEach(p=>{ctx.beginPath();ctx.arc(p.x,p.y,2.5,0,Math.PI*2);ctx.fillStyle='#7c6aff';ctx.fill()});
+  }
+  const le=document.getElementById('chart-labels');if(le){le.innerHTML='';labels.filter((_,i)=>i%2===0).forEach(l=>{const s=document.createElement('span');s.className='chart-lbl';s.textContent=l;le.appendChild(s)})}
+}
 
-  // Count taken this month
-  const kCount  = countTakenInMonth('kutris');
-  const aCount  = countTakenInMonth('antibio');
-  document.getElementById('cal-k-count').textContent = `${kCount} принято`;
-  document.getElementById('cal-a-count').textContent = `${aCount} принято`;
-
-  ['k','a'].forEach(key => {
-    const pill = key==='k' ? 'kutris' : 'antibio';
-    const color = key==='k' ? 'var(--accent1)' : 'var(--accent3)';
-
-    // Weekday headers
-    const wdEl = document.getElementById(`cal-weekdays-${key}`);
-    wdEl.innerHTML = wdays.map(d => `<div class="cal-wday">${d}</div>`).join('');
-
-    const grid = document.getElementById(`cal-grid-${key}`);
-    grid.innerHTML = '';
-
-    const firstDay = new Date(calYear, calMonth, 1);
-    // Monday-based week: 0=Mon..6=Sun
-    let startDow = firstDay.getDay(); // 0=Sun
-    startDow = startDow === 0 ? 6 : startDow - 1;
-
-    const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
-
-    // Empty cells
-    for (let i = 0; i < startDow; i++) {
-      grid.insertAdjacentHTML('beforeend', '<div class="cal-day empty"></div>');
+// ── CALENDAR ──────────────────────────────────────────────
+function initCal(){const n=new Date();calYear=n.getFullYear();calMonth=n.getMonth()}
+function renderCalendar(){
+  const tod=today(),now=new Date();
+  const mN=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+  const wd=['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+  document.getElementById('cal-month-title').textContent=`${mN[calMonth]} ${calYear}`;
+  document.getElementById('cal-k-count').textContent=countMonth('kutris')+' принято';
+  document.getElementById('cal-a-count').textContent=countMonth('antibio')+' принято';
+  ['k','a'].forEach(key=>{
+    const p=key==='k'?'kutris':'antibio',col=key==='k'?'var(--a1)':'var(--a3)';
+    document.getElementById(`cal-wd-${key}`).innerHTML=wd.map(d=>`<div class="cal-wd">${d}</div>`).join('');
+    const grid=document.getElementById(`cal-grid-${key}`);grid.innerHTML='';
+    const fd=new Date(calYear,calMonth,1).getDay();
+    const sd=fd===0?6:fd-1;
+    const dim=new Date(calYear,calMonth+1,0).getDate();
+    for(let i=0;i<sd;i++)grid.insertAdjacentHTML('beforeend','<div class="cday"></div>');
+    for(let day=1;day<=dim;day++){
+      const dateObj=new Date(calYear,calMonth,day),ds=lds(dateObj);
+      const isTaken=!!(state[p].taken||{})[ds],isToday=ds===tod,isFuture=dateObj>now&&!isToday,isPast=!isFuture&&!isToday&&!isTaken,hasNote=!!(state.diary||{})[ds];
+      let cls='cday';
+      if(isFuture)cls+=' future';else if(isTaken)cls+=` tk tk-${key}`;else if(isPast)cls+=' past-miss';
+      if(isToday)cls+=' is-today';if(hasNote)cls+=' has-note';
+      const x=isTaken?`<div class="cal-x"><svg viewBox="0 0 24 24" fill="none" stroke="${col}" stroke-width="2.5" stroke-linecap="round"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg></div>`:'';
+      grid.insertAdjacentHTML('beforeend',`<div class="${cls}" onclick="openNote('${ds}')">${x}<span class="cday-num">${day}</span></div>`);
     }
+  });
+  renderSkinChart();
+}
+function countMonth(p){const pr=`${calYear}-${String(calMonth+1).padStart(2,'0')}`;return Object.keys(state[p].taken||{}).filter(d=>d.startsWith(pr)).length}
+function calPrev(){calMonth--;if(calMonth<0){calMonth=11;calYear--}renderCalendar()}
+function calNext(){calMonth++;if(calMonth>11){calMonth=0;calYear++}renderCalendar()}
 
-    for (let day = 1; day <= daysInMonth; day++) {
-      const dateObj = new Date(calYear, calMonth, day);
-      const ds = localDateStr(dateObj);
-      const isTaken  = !!state[pill].taken[ds];
-      const isToday  = ds === today;
-      const isFuture = dateObj > now;
-      const isPast   = !isFuture && !isToday;
+function openNote(ds){
+  const ex=(state.diary||{})[ds]||{};
+  const d=new Date(ds+'T12:00:00');
+  const ov=document.createElement('div');ov.className='modal-overlay';
+  ov.innerHTML=`<div class="modal-box"><div class="modal-title">${d.toLocaleDateString('ru-RU',{weekday:'long',day:'numeric',month:'long'})}</div><div class="modal-sub">Заметка к этому дню</div><textarea class="modal-ta" id="mta" placeholder="Как была кожа? Что-то особенное?">${ex.note||''}</textarea><div class="modal-btns"><button class="modal-btn sec" onclick="this.closest('.modal-overlay').remove()">Отмена</button><button class="modal-btn pri" onclick="saveNote('${ds}',this)">Сохранить</button></div></div>`;
+  ov.onclick=e=>{if(e.target===ov)ov.remove()};document.body.appendChild(ov);setTimeout(()=>document.getElementById('mta').focus(),100);
+}
+function saveNote(ds,btn){
+  if(!state.diary)state.diary={};if(!state.diary[ds])state.diary[ds]={};
+  state.diary[ds].note=document.getElementById('mta').value;save();btn.closest('.modal-overlay').remove();renderCalendar();
+}
 
-      let cls = 'cal-day';
-      if (isFuture && !isToday) cls += ' future';
-      else if (isTaken) cls += key==='k' ? ' taken-k' : ' taken-a';
-      else if (isPast)  cls += ' past-empty';
-      if (isToday) cls += ' is-today';
+// ── PHOTO ─────────────────────────────────────────────────
+function renderPhotoGrid(){
+  const g=document.getElementById('photo-grid');if(!g)return;g.innerHTML='';
+  WEEK_LABELS.forEach((label,i)=>{
+    const stored=localStorage.getItem(`photo-${i}`);
+    const slot=document.createElement('div');slot.className='photo-slot';
+    if(stored){const date=localStorage.getItem(`photo-date-${i}`)||'';slot.innerHTML=`<img src="${stored}" alt="${label}"><div class="photo-date">${date}</div>`}
+    else{slot.innerHTML=`<div class="photo-slot-ico">📷</div><div class="photo-slot-lbl">${label}</div>`}
+    slot.onclick=()=>{activePhotoSlot=i;document.getElementById('photo-input').click()};
+    g.appendChild(slot);
+  });
+}
+function handlePhotoUpload(e){
+  const file=e.target.files[0];if(!file||activePhotoSlot===null)return;
+  const r=new FileReader();
+  r.onload=ev=>{localStorage.setItem(`photo-${activePhotoSlot}`,ev.target.result);localStorage.setItem(`photo-date-${activePhotoSlot}`,new Date().toLocaleDateString('ru-RU',{day:'numeric',month:'short'}));renderPhotoGrid()};
+  r.readAsDataURL(file);e.target.value='';
+}
 
-      const checkSvg = isTaken ? `
-        <div class="cal-check">
-          <svg viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="5" y1="5" x2="19" y2="19"/>
-            <line x1="19" y1="5" x2="5" y2="19"/>
-          </svg>
-        </div>` : '';
+// ── TIPS ──────────────────────────────────────────────────
+function renderTipWidget(){
+  const tip=tips[currentTip];
+  document.getElementById('tip-body').textContent=tip.text;
+  document.getElementById('tip-cat-badge').textContent=tip.cat;
+  const de=document.getElementById('tip-dots');de.innerHTML='';
+  tips.forEach((_,i)=>{const d=document.createElement('div');d.className='tip-dot'+(i===currentTip?' active':'');d.onclick=e=>{e.stopPropagation();currentTip=i;animateTip()};de.appendChild(d)});
+}
+function animateTip(){const tb=document.getElementById('tip-body');tb.style.opacity='0';setTimeout(()=>{renderTipWidget();tb.style.opacity='1'},280)}
+function nextTip(){currentTip=(currentTip+1)%tips.length;animateTip()}
+function prevTip(){currentTip=(currentTip-1+tips.length)%tips.length;animateTip()}
+setInterval(nextTip,9000);
 
-      grid.insertAdjacentHTML('beforeend', `
-        <div class="${cls}">
-          ${checkSvg}
-          <span class="cal-day-num">${day}</span>
-        </div>`);
-    }
+function renderTipsPage(){
+  const list=document.getElementById('tips-list');list.innerHTML='';
+  Object.entries(tipCats).forEach(([cat,kk])=>{
+    const ct=tips.filter(t=>kk.includes(t.cat));if(!ct.length)return;
+    const h=document.createElement('div');h.className='tips-cat-hdr';h.textContent=cat;list.appendChild(h);
+    ct.forEach((tip,i)=>{const c=document.createElement('div');c.className='tips-page-card';c.style.animationDelay=(i*0.04)+'s';c.innerHTML=`<div style="font-size:1.3rem;flex-shrink:0">${tip.emoji}</div><div><div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:2px">${tip.cat}</div><div style="font-size:0.82rem;color:var(--text);line-height:1.6">${tip.text}</div></div>`;list.appendChild(c)});
   });
 }
 
-function countTakenInMonth(pill) {
-  const prefix = `${calYear}-${String(calMonth+1).padStart(2,'0')}`;
-  return Object.keys(state[pill].taken).filter(d => d.startsWith(prefix)).length;
+// ── CONFETTI ──────────────────────────────────────────────
+function confetti(n=35){
+  const colors=['#7c6aff','#ff6b9d','#4adeab','#ffa94d','#fff'];
+  for(let i=0;i<n;i++){
+    const el=document.createElement('div');el.className='conf';const sz=6+Math.random()*10;
+    el.style.cssText=`left:${Math.random()*100}vw;top:${Math.random()*-80-10}px;width:${sz}px;height:${sz}px;background:${colors[Math.floor(Math.random()*colors.length)]};border-radius:${Math.random()>.5?'50%':'3px'}`;
+    el.style.setProperty('--dur',(1+Math.random()*.8)+'s');el.style.setProperty('--sy',(-Math.random()*150-30)+'px');el.style.setProperty('--rot',(Math.random()*720-360)+'deg');
+    document.body.appendChild(el);setTimeout(()=>el.remove(),2500);
+  }
 }
 
-function calPrev() { calMonth--; if(calMonth<0){calMonth=11;calYear--;} renderCalendar(); }
-function calNext() { calMonth++; if(calMonth>11){calMonth=0;calYear++;} renderCalendar(); }
+// ── NAV ───────────────────────────────────────────────────
+function showTab(tab){
+  document.querySelectorAll('.tab-page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  document.getElementById('nav-'+tab).classList.add('active');
+  if(tab==='calendar')renderCalendar();
+  if(tab==='tips')renderTipsPage();
+  if(tab==='diary'){initDiary();renderDiaryHistory();renderChecks()}
+  if(tab==='progress')renderPhotoGrid();
+}
 
-// ── STARS ─────────────────────────────────────────────────────────
-function createStars() {
-  const c = document.getElementById('stars');
-  for (let i = 0; i < 70; i++) {
-    const s = document.createElement('div');
-    s.className = 'star';
-    const sz = Math.random()*2.4+0.4;
-    s.style.cssText = `width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;animation-delay:${Math.random()*6}s`;
-    s.style.setProperty('--d', (2+Math.random()*4)+'s');
+// ── STARS ─────────────────────────────────────────────────
+function createStars(){
+  const c=document.getElementById('stars');
+  for(let i=0;i<90;i++){
+    const s=document.createElement('div');s.className='star';
+    const sz=Math.random()*3+0.5;
+    s.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;animation-delay:${Math.random()*7}s`;
+    s.style.setProperty('--d',(1.5+Math.random()*4.5)+'s');
     c.appendChild(s);
   }
 }
 
-// ── PWA INSTALL ───────────────────────────────────────────────────
-window.addEventListener('beforeinstallprompt', e => {
-  e.preventDefault();
-  deferredPrompt = e;
-  if (!localStorage.getItem('pwa-banner-closed')) {
-    document.getElementById('install-banner').classList.remove('hidden');
-  }
-});
-function installPWA() {
-  if (!deferredPrompt) return;
-  deferredPrompt.prompt();
-  deferredPrompt.userChoice.then(() => {
-    deferredPrompt = null;
-    document.getElementById('install-banner').classList.add('hidden');
-  });
-}
-function closeBanner() {
-  document.getElementById('install-banner').classList.add('hidden');
-  localStorage.setItem('pwa-banner-closed','1');
-}
+// ── PWA ───────────────────────────────────────────────────
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;if(!localStorage.getItem('pwa-closed'))document.getElementById('install-banner').classList.remove('hidden')});
+function installPWA(){if(!deferredPrompt)return;deferredPrompt.prompt();deferredPrompt.userChoice.then(()=>{deferredPrompt=null;document.getElementById('install-banner').classList.add('hidden')})}
+function closeBanner(){document.getElementById('install-banner').classList.add('hidden');localStorage.setItem('pwa-closed','1')}
+if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
 
-// ── SERVICE WORKER ────────────────────────────────────────────────
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js').catch(()=>{});
-}
-
-// ── INIT ──────────────────────────────────────────────────────────
-createStars();
-initCal();
-initFirebase(); // загружает из Firebase, потом вызывает render()
+// ── INIT ──────────────────────────────────────────────────
+createStars();initCal();
+setInterval(()=>{if(document.getElementById('tab-home').classList.contains('active'))render()},60000);
+initFB();
 </script>
 </body>
 </html>

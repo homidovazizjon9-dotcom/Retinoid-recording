@@ -203,7 +203,7 @@ input[type=file]{display:none}
 <div class="completion-overlay hidden" id="completion">
   <div class="comp-emoji">👑</div>
   <div class="comp-title">Курс завершён!</div>
-  <div class="comp-text">Азизчон, ты сделал это! 60 дней без пропуска. Кожа обновилась полностью. Ты — легенда. Акне больше не вернётся! 🎉</div>
+  <div class="comp-text">Азизчон, ты сделал это! 60 дней без пропуска .один день не считается. Кожа обновилась полностью. Ты — легенда. Акне больше не вернётся! 🎉</div>
   <button class="comp-close" onclick="document.getElementById('completion').classList.add('hidden')">Спасибо! 🙌</button>
 </div>
 
@@ -440,7 +440,7 @@ const db=firebase.database(), REF=db.ref('azizjon');
 // ── STATE ─────────────────────────────────────────────────
 let currentTip=0,calYear,calMonth,deferredPrompt=null,fbReady=false;
 let currentSkinScore=0,activeEffects=new Set(),activePhotoSlot=null,todayChecks={morning:{},evening:{}};
-let state={kutris:{taken:{}},antibio:{taken:{}},diary:{},checks:{},streak:0};
+let state={kutris:{taken:{}},antibio:{taken:{}},diary:{},checks:{},streak:20};
 
 // ── HELPERS ───────────────────────────────────────────────
 function lds(d){return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
@@ -449,7 +449,7 @@ function keys(o){return Object.keys(o||{}).length}
 function getTaken(p){return keys(state[p].taken)}
 function setStatus(m,c){const e=document.getElementById('sync-status');if(!e)return;e.textContent=m;e.style.color=c||'var(--muted2)'}
 function buildTaken(days){const o={},n=new Date();for(let i=0;i<days;i++){const d=new Date(n);d.setDate(d.getDate()-days+i);o[lds(d)]=true}return o}
-function calcStreak(s){let st=0;const n=new Date();for(let i=0;i<120;i++){const d=new Date(n);d.setDate(d.getDate()-i);if((s.kutris.taken||{})[lds(d)]){st++}else{if(i===0)continue;break}}return st}
+function calcStreak(s){let st=20;const n=new Date();for(let i=0;i<120;i++){const d=new Date(n);d.setDate(d.getDate()-i);if((s.kutris.taken||{})[lds(d)]){st++}else{if(i===0)continue;break}}return st}
 function computeStreak(){return calcStreak(state)}
 function norm(s){
   if(!s.kutris)  s.kutris={taken:{}};
